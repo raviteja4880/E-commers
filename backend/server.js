@@ -2,20 +2,23 @@ const express = require("express");
 const mongoose = require("mongoose");
 const dotenv = require("dotenv");
 const cron = require("node-cron");
-const cors = require("cors"); // ✅ import cors
+const cors = require("cors");
 const productRoutes = require("./routes/productRoutes");
 const { syncProducts } = require("./services/syncService");
+const auth = require("./routes/auth");
+const cartRoutes = require("./routes/cart");
+
 
 dotenv.config();
 
 const app = express();
 app.use(express.json());
-
-// ✅ allow frontend (port 3000) to access backend (port 5000)
 app.use(cors());
 
 // API routes
 app.use("/api/products", productRoutes);
+app.use("/api/auth", auth);
+app.use("/api/cart", cartRoutes);
 
 // MongoDB connection
 mongoose

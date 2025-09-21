@@ -1,151 +1,109 @@
 import React from "react";
 import { useCart } from "../context/CartContext";
+import { useNavigate } from "react-router-dom";
+
 
 function Cart() {
-  const { state, dispatch } = useCart();
+  const { state, updateCartQty, removeFromCart, clearCart } = useCart();
+  const { cartItems, loading, error } = state;
+  const navigate = useNavigate();
 
-  if (state.cartItems.length === 0) {
-    return <h2 style={{ textAlign: "center", marginTop: "50px" }}>🛒 Your Cart is Empty</h2>;
-  }
-
-  const total = state.cartItems.reduce(
-    (sum, item) => sum + item.price * item.qty,
+  const totalPrice = cartItems.reduce(
+    (acc, item) => acc + item.qty * item.price,
     0
   );
 
+  if (loading) return <p className="text-center mt-5">Loading cart...</p>;
+  if (error) return <p className="text-center mt-5 text-danger">{error}</p>;
+
   return (
-    <div style={styles.container}>
-      <h2 style={styles.heading}>Your Shopping Cart</h2>
+    <div className="container mt-4">
+      <h2>My Cart</h2>
+      {cartItems.length === 0 ? (
+        <p>Your cart is empty.</p>
+      ) : (
+        <>
+          <table className="table table-bordered mt-3">
+            <thead>
+              <tr>
+                <th>Product</th>
+                <th>Price</th>
+                <th>Qty</th>
+                <th>Subtotal</th>
+                <th>Action</th>
+              </tr>
+            </thead>
+            <tbody>
+              {cartItems.map((item) => (
+                <tr key={item._id}>
+                  <td>{item.name}</td>
+                  <td>₹{item.price}</td>
+                  <td>
+                    <div className="d-flex align-items-center">
+                      <button
+                        className="btn btn-sm btn-outline-secondary me-2"
+                        onClick={() =>
+                          updateCartQty(item._id, item.qty - 1)
+                        }
+                        disabled={item.qty <= 1}
+                      >
+                        -
+                      </button>
+                      <input
+                        type="number"
+                        value={item.qty}
+                        min="1"
+                        style={{ width: "60px", textAlign: "center" }}
+                        onChange={(e) =>
+                          updateCartQty(item._id, Number(e.target.value))
+                        }
+                      />
+                      <button
+                        className="btn btn-sm btn-outline-secondary ms-2"
+                        onClick={() =>
+                          updateCartQty(item._id, item.qty + 1)
+                        }
+                      >
+                        +
+                      </button>
+                    </div>
+                  </td>
+                  <td>₹{item.price * item.qty}</td>
+                  <td>
+                    <button
+                      className="btn btn-danger btn-sm"
+                      onClick={() => removeFromCart(item._id)}
+                    >
+                      Remove
+                    </button>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
 
-      {state.cartItems.map((item) => (
-        <div key={item._id} style={styles.cartItem}>
-          <img src={item.image} alt={item.name} style={styles.image} />
+          <div className="d-flex justify-content-between align-items-center mt-4">
+            <h4>Total: ₹{totalPrice}</h4>
+            <div>
+              <button
+                className="btn btn-outline-danger me-2"
+                onClick={clearCart}
+              >
+                Clear Cart
+              </button>
 
-          <div style={styles.details}>
-            <h3>{item.name}</h3>
-            <p style={styles.brand}>{item.brand}</p>
-            <p style={styles.price}>₹{item.price}</p>
+              <button
+                className="btn btn-success"
+                onClick={() => navigate("/checkout")}
+              >
+                Checkout
+              </button>
+            </div>
           </div>
-
-          <div style={styles.actions}>
-            <button
-              style={styles.qtyBtn}
-              onClick={() =>
-                dispatch({ type: "REMOVE_FROM_CART", payload: item._id })
-              }
-            >
-              –
-            </button>
-            <span style={styles.qty}>{item.qty}</span>
-            <button
-              style={styles.qtyBtn}
-              onClick={() =>
-                dispatch({ type: "ADD_TO_CART", payload: item })
-              }
-            >
-              +
-            </button>
-          </div>
-
-          <div style={styles.totalPrice}>
-            ₹{(item.price * item.qty).toFixed(2)}
-          </div>
-        </div>
-      ))}
-
-      {/* Footer with total & buy button */}
-      <div style={styles.footer}>
-        <h3>Total: ₹{total.toFixed(2)}</h3>
-        <button style={styles.buyBtn}>Buy Now</button>
-      </div>
+        </>
+      )}
     </div>
   );
 }
-
-const styles = {
-  container: {
-    padding: "20px",
-    maxWidth: "800px",
-    margin: "auto",
-  },
-  heading: {
-    textAlign: "center",
-    marginBottom: "20px",
-  },
-  cartItem: {
-    display: "flex",
-    alignItems: "center",
-    justifyContent: "space-between",
-    backgroundColor: "#fff",
-    padding: "15px",
-    marginBottom: "15px",
-    borderRadius: "10px",
-    boxShadow: "0 2px 8px rgba(0,0,0,0.1)",
-  },
-  image: {
-    width: "80px",
-    height: "80px",
-    objectFit: "cover",
-    borderRadius: "8px",
-  },
-  details: {
-    flex: 1,
-    marginLeft: "15px",
-  },
-  brand: {
-    fontSize: "14px",
-    color: "gray",
-  },
-  price: {
-    fontSize: "16px",
-    fontWeight: "bold",
-    color: "green",
-  },
-  actions: {
-    display: "flex",
-    alignItems: "center",
-  },
-  qtyBtn: {
-    padding: "5px 10px",
-    fontSize: "18px",
-    fontWeight: "bold",
-    border: "1px solid #007bff",
-    backgroundColor: "#fff",
-    color: "#007bff",
-    borderRadius: "5px",
-    cursor: "pointer",
-  },
-  qty: {
-    margin: "0 10px",
-    fontSize: "16px",
-    fontWeight: "bold",
-  },
-  totalPrice: {
-    fontWeight: "bold",
-    fontSize: "16px",
-    marginLeft: "20px",
-  },
-  footer: {
-    display: "flex",
-    justifyContent: "space-between",
-    alignItems: "center",
-    marginTop: "20px",
-    padding: "15px",
-    borderTop: "2px solid #ddd",
-    position: "sticky",
-    bottom: 0,
-    backgroundColor: "#fff",
-  },
-  buyBtn: {
-    padding: "10px 20px",
-    backgroundColor: "#28a745",
-    border: "none",
-    color: "#fff",
-    borderRadius: "8px",
-    cursor: "pointer",
-    fontSize: "16px",
-    fontWeight: "bold",
-  },
-};
 
 export default Cart;

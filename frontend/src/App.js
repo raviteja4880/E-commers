@@ -1,22 +1,53 @@
 import React from "react";
-import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
-import Navbar from "./pages/Navbar"; 
+import { BrowserRouter as Router, Routes, Route, useLocation, Navigate } from "react-router-dom";
+import Navbar from "./pages/Navbar";
 import Home from "./pages/Home";
 import Cart from "./pages/Cart";
 import Login from "./pages/Login";
 import Register from "./pages/Register";
+import CheckoutPage from "./pages/CheckoutPage";
+import OrderSuccess from "./pages/OrderSuccess";
+import { CartProvider } from "./context/CartContext";
+import ProductDetails from "./pages/ProductDetails";
+
+// Wrapper to conditionally show Navbar
+function Layout({ children }) {
+  const location = useLocation();
+
+  // hide Navbar on login & register
+  const hideNavbar =
+    location.pathname === "/login" || location.pathname === "/register";
+
+  return (
+    <>
+      {!hideNavbar && <Navbar />}
+      {children}
+    </>
+  );
+}
 
 function App() {
+  const userInfo = localStorage.getItem("userInfo"); // ✅ define here
+
   return (
-    <Router>
-      <Navbar />
-      <Routes>
-        <Route path="/" element={<Home />} />
-        <Route path="/cart" element={<Cart />} />
-        <Route path="/login" element={<Login />} />
-        <Route path="/register" element={<Register />} />
-      </Routes>
-    </Router>
+    <CartProvider>
+      <Router>
+        <Layout>
+          <Routes>
+            <Route path="/" element={<Home />} />
+            <Route path="/cart" element={<Cart />} />
+            <Route path="/order-success" element={<OrderSuccess />} />
+            <Route path="/login" element={<Login />} />
+            <Route path="/register" element={<Register />} />
+            <Route path="/product/:id" element={<ProductDetails />} />
+            <Route
+              path="/checkout"
+              element={userInfo ? <CheckoutPage /> : <Navigate to="/login" />}
+            />
+          </Routes>
+        </Layout>
+      </Router>
+    </CartProvider>
   );
 }
 

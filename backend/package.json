@@ -15,9 +15,12 @@
   "type": "commonjs",
   "dependencies": {
     "axios": "^1.12.1",
+    "bcryptjs": "^3.0.2",
     "cors": "^2.8.5",
     "dotenv": "^17.2.1",
     "express": "^5.1.0",
+    "i": "^0.3.7",
+    "jsonwebtoken": "^9.0.2",
     "mongoose": "^8.17.0",
     "node-cron": "^4.2.1"
   },

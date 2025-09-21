@@ -1,19 +1,27 @@
 import React, { useState } from "react";
+import { useNavigate } from "react-router-dom";
+import axios from "axios";
 
 function Login() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
+  const navigate = useNavigate();
 
-  const handleLogin = (e) => {
+  const handleLogin = async (e) => {
     e.preventDefault();
-    // TODO: Replace with backend JWT auth
-    if (email === "admin@test.com" && password === "123456") {
-      localStorage.setItem("userInfo", JSON.stringify({ email }));
-      alert("✅ Logged in successfully!");
-      window.location.href = "/";
-    } else {
-      setError("Invalid email or password");
+
+    try {
+      const { data } = await axios.post("http://localhost:5000/api/auth/login", {
+        email,
+        password,
+      });
+
+      // ✅ Save logged-in user info + token in localStorage
+      localStorage.setItem("userInfo", JSON.stringify(data));
+      navigate("/");
+    } catch (err) {
+      setError(err.response?.data?.message || "Login failed. Try again.");
     }
   };
 
@@ -22,7 +30,7 @@ function Login() {
       <div className="card shadow-lg p-4" style={{ maxWidth: "400px", width: "100%" }}>
         <h2 className="text-center mb-4">Login</h2>
         {error && <div className="alert alert-danger">{error}</div>}
-        
+
         <form onSubmit={handleLogin}>
           <div className="mb-3">
             <label className="form-label">Email</label>

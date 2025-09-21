@@ -1,4 +1,6 @@
 import React, { useState } from "react";
+import { useNavigate } from "react-router-dom";
+import axios from "axios";
 
 function Register() {
   const [name, setName] = useState("");
@@ -6,12 +8,11 @@ function Register() {
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
   const [error, setError] = useState("");
-  const [success, setSuccess] = useState("");
+  const navigate = useNavigate();
 
-  const handleRegister = (e) => {
+  const handleRegister = async (e) => {
     e.preventDefault();
     setError("");
-    setSuccess("");
 
     // simple validation
     if (password !== confirmPassword) {
@@ -19,13 +20,18 @@ function Register() {
       return;
     }
 
-    // TODO: Replace with backend API call
-    const userInfo = { name, email };
-    localStorage.setItem("userInfo", JSON.stringify(userInfo));
-    setSuccess("🎉 Registration successful! Redirecting...");
-    setTimeout(() => {
-      window.location.href = "/login";
-    }, 1500);
+    try {
+      await axios.post("http://localhost:5000/api/auth/register", {
+        name,
+        email,
+        password,
+      });
+
+      // ✅ Directly navigate to login after success
+      navigate("/login");
+    } catch (err) {
+      setError(err.response?.data?.message || "Registration failed. Try again.");
+    }
   };
 
   return (
@@ -34,7 +40,6 @@ function Register() {
         <h2 className="text-center mb-4">Register</h2>
 
         {error && <div className="alert alert-danger">{error}</div>}
-        {success && <div className="alert alert-success">{success}</div>}
 
         <form onSubmit={handleRegister}>
           <div className="mb-3">

@@ -3,11 +3,7 @@ import { Link } from "react-router-dom";
 import { useCart } from "../../context/CartContext";
 
 function ProductCard({ product }) {
-  const { dispatch } = useCart(); // ✅ get dispatch
-
-  const addToCart = () => {
-    dispatch({ type: "ADD_TO_CART", payload: product });
-  };
+  const { addToCart } = useCart();
 
   return (
     <div style={styles.card}>
@@ -21,8 +17,7 @@ function ProductCard({ product }) {
         <p style={styles.price}>₹{product.price}</p>
       </Link>
 
-      {/* ✅ Button dispatches action */}
-      <button style={styles.button} onClick={addToCart}>
+      <button style={styles.button} onClick={() => addToCart(product._id, 1)}>
         Add to Cart
       </button>
     </div>

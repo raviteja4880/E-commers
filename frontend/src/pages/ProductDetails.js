@@ -1,65 +1,95 @@
 import React, { useEffect, useState } from "react";
-import { useParams } from "react-router-dom";
+import { useParams, useNavigate } from "react-router-dom";
+import { getProductById } from "../services/api";
+import { useCart } from "../context/CartContext";
 
 function ProductDetails() {
-  const { id } = useParams(); // get product ID from URL
+  const { id } = useParams();
+  const navigate = useNavigate();
+  const { addToCart } = useCart();
+
   const [product, setProduct] = useState(null);
+  const [qty, setQty] = useState(1);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
 
   useEffect(() => {
-    fetch(`http://localhost:5000/api/products/${id}`)
-      .then((res) => res.json())
-      .then((data) => setProduct(data));
+    const fetchProduct = async () => {
+      try {
+        const data = await getProductById(id);
+        setProduct(data);
+      } catch (err) {
+        setError("Failed to load product.");
+        console.error(err);
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchProduct();
   }, [id]);
 
-  if (!product) return <h2 style={{ textAlign: "center" }}>Loading...</h2>;
+  if (loading) return <p className="text-center mt-5">Loading product...</p>;
+  if (error) return <p className="text-center mt-5 text-danger">{error}</p>;
+  if (!product) return <p className="text-center mt-5">Product not found.</p>;
+
+  const handleQtyChange = (val) => {
+    if (val < 1) return;
+    setQty(val);
+  };
 
   return (
-    <div style={styles.container}>
-      <img src={product.image} alt={product.name} style={styles.image} />
-      <div style={styles.details}>
-        <h2>{product.name}</h2>
-        <p><b>Brand:</b> {product.brand}</p>
-        <p><b>Category:</b> {product.category}</p>
-        <p>{product.description}</p>
-        <h3 style={styles.price}>₹{product.price}</h3>
-        <p>{product.countInStock > 0 ? "✅ In Stock" : "❌ Out of Stock"}</p>
-        <button style={styles.button} disabled={product.countInStock === 0}>
-          Add to Cart
-        </button>
+    <div className="container mt-4">
+      <div className="row">
+        <div className="col-md-6">
+          <img
+            src={product.image}
+            alt={product.name}
+            className="img-fluid rounded"
+          />
+        </div>
+        <div className="col-md-6">
+          <h2>{product.name}</h2>
+          <p className="text-muted">{product.brand}</p>
+          <h4 className="text-success">₹{product.price}</h4>
+          <p>{product.description}</p>
+
+          <div className="d-flex align-items-center mb-3">
+            <button
+              className="btn btn-outline-secondary me-2"
+              onClick={() => handleQtyChange(qty - 1)}
+              disabled={qty <= 1}
+            >
+              -
+            </button>
+            <input
+              type="number"
+              value={qty}
+              min="1"
+              className="form-control text-center"
+              style={{ width: "70px" }}
+              onChange={(e) => handleQtyChange(Number(e.target.value))}
+            />
+            <button
+              className="btn btn-outline-secondary ms-2"
+              onClick={() => handleQtyChange(qty + 1)}
+            >
+              +
+            </button>
+          </div>
+
+          <button
+            className="btn btn-primary mt-2"
+            onClick={() => {
+              addToCart(product._id, qty);
+              navigate("/cart");
+            }}
+          >
+            Add to Cart
+          </button>
+        </div>
       </div>
     </div>
   );
 }
-
-const styles = {
-  container: {
-    display: "flex",
-    gap: "20px",
-    padding: "40px",
-  },
-  image: {
-    width: "400px",
-    height: "400px",
-    objectFit: "cover",
-    borderRadius: "10px",
-  },
-  details: {
-    flex: 1,
-  },
-  price: {
-    color: "green",
-    fontWeight: "bold",
-    fontSize: "22px",
-  },
-  button: {
-    marginTop: "15px",
-    padding: "10px 15px",
-    border: "none",
-    backgroundColor: "#007bff",
-    color: "#fff",
-    borderRadius: "5px",
-    cursor: "pointer",
-  },
-};
 
 export default ProductDetails;
