@@ -1,7 +1,7 @@
 import axios from "axios";
 
-// ----------------- Base URL -----------------
-const BASE_URL = "http://localhost:5000/api";
+// ----------------- Dynamic Base URL -----------------
+const BASE_URL = import.meta.env.VITE_API_BASE_URL || "http://localhost:5000/api";
 
 // ----------------- Axios instance -----------------
 const API = axios.create({
@@ -25,12 +25,11 @@ API.interceptors.request.use((req) => {
   return req;
 });
 
-
 // ================= Auth API =================
 export const authAPI = {
   login: (payload) => API.post("/auth/login", payload),
   register: (payload) => API.post("/auth/register", payload),
-  profile: () => API.get("/auth/profile"), // make sure backend has /auth/profile route
+  profile: () => API.get("/auth/profile"),
 };
 
 // ================= Products API =================
@@ -40,18 +39,17 @@ export const productAPI = {
   create: (payload) => API.post("/products", payload),
   update: (id, payload) => API.put(`/products/${id}`, payload),
   delete: (id) => API.delete(`/products/${id}`),
-  sync: () => API.post("/products/sync"), // your sync route
+  sync: () => API.post("/products/sync"),
 };
 
 // ================= Cart API =================
 export const cartAPI = {
   get: () => API.get("/cart"),
   add: (productId, qty = 1) => API.post("/cart/add", { productId, qty }),
-  update: (productId, qty) => API.put(`/cart/${productId}`, { qty }),    
-  remove: (productId) => API.delete(`/cart/${productId}`),               
-  clear: () => API.delete("/cart"),                                      
+  update: (productId, qty) => API.put(`/cart/${productId}`, { qty }),
+  remove: (productId) => API.delete(`/cart/${productId}`),
+  clear: () => API.delete("/cart"),
 };
-
 
 // ================= Orders API =================
 export const orderAPI = {
