@@ -1,10 +1,7 @@
 import axios from "axios";
 
 // ----------------- Base URL -----------------
-const BASE_URL =
-  process.env.NODE_ENV === "production"
-    ? process.env.REACT_APP_API_BASE
-    : "http://localhost:5000/api";
+const BASE_URL = "http://localhost:5000/api";
 
 // ----------------- Axios instance -----------------
 const API = axios.create({
@@ -16,13 +13,18 @@ const API = axios.create({
 
 // ----------------- Attach JWT token automatically -----------------
 API.interceptors.request.use((req) => {
-  const token = localStorage.getItem("token"); // <- fixed
-  if (token) {
-    req.headers = req.headers || {};
-    req.headers.Authorization = `Bearer ${token}`;
+  try {
+    const userInfo = JSON.parse(localStorage.getItem("userInfo"));
+    const token = userInfo?.token;
+    if (token) {
+      req.headers.Authorization = `Bearer ${token}`;
+    }
+  } catch {
+    console.warn("Invalid userInfo in localStorage");
   }
   return req;
 });
+
 
 // ================= Auth API =================
 export const authAPI = {
@@ -44,11 +46,12 @@ export const productAPI = {
 // ================= Cart API =================
 export const cartAPI = {
   get: () => API.get("/cart"),
-  add: (productId, qty = 1) => API.post("/cart", { productId, qty }), // match backend
-  update: (productId, qty) => API.put(`/cart/${productId}`, { qty }),
-  remove: (productId) => API.delete(`/cart/${productId}`),
-  clear: () => API.delete("/cart"),
+  add: (productId, qty = 1) => API.post("/cart/add", { productId, qty }),
+  update: (productId, qty) => API.put(`/cart/${productId}`, { qty }),    
+  remove: (productId) => API.delete(`/cart/${productId}`),               
+  clear: () => API.delete("/cart"),                                      
 };
+
 
 // ================= Orders API =================
 export const orderAPI = {

@@ -10,25 +10,24 @@ function Login() {
   const navigate = useNavigate();
 
   const handleLogin = async (e) => {
-    e.preventDefault();
-    setError("");
-    setLoading(true);
+  e.preventDefault();
+  setError("");
+  setLoading(true);
 
-    try {
-      // ✅ Use authAPI for login
-      const { data } = await authAPI.login({ email, password });
+  try {
+    const { data } = await authAPI.login({ email, password });
 
-      // ✅ Store full user info including token
-      localStorage.setItem("userInfo", JSON.stringify(data));
+    // Save both separately
+    localStorage.setItem("userInfo", JSON.stringify(data.user || data));
+    localStorage.setItem("token", data.token);
 
-      // ✅ Navigate to home after login
-      navigate("/");
-    } catch (err) {
-      setError(err.response?.data?.message || "Login failed. Try again.");
-    } finally {
-      setLoading(false);
-    }
-  };
+    navigate("/");
+  } catch (err) {
+    setError(err.response?.data?.message || "Login failed. Try again.");
+  } finally {
+    setLoading(false);
+  }
+};
 
   return (
     <div className="container d-flex justify-content-center align-items-center vh-100">

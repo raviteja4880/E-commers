@@ -19,7 +19,14 @@ function ProductCard({ product }) {
         <p style={styles.price}>₹{product.price}</p>
       </Link>
 
-      <button style={styles.button} onClick={() => addToCart(product._id, 1)}>
+      <button
+        style={styles.button}
+        onClick={(e) => {
+          e.preventDefault();
+          e.stopPropagation();
+          addToCart(product._id, 1);
+        }}
+      >
         Add to Cart
       </button>
     </div>
@@ -36,7 +43,7 @@ const styles = {
     padding: "15px",
     backgroundColor: "#fff",
     boxShadow: "0 2px 6px rgba(0,0,0,0.1)",
-    height: "420px", // fixed height
+    height: "420px",
     textAlign: "center",
   },
   imageWrapper: {

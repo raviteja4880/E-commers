@@ -24,7 +24,7 @@ function cartReducer(state, action) {
     case "FAILURE":
       return { ...state, loading: false, error: action.payload };
     case "CLEAR":
-      return { ...state, cartItems: [], totalPrice: 0, loading: false };
+      return { ...state, cartItems: [], totalPrice: 0 };
     default:
       return state;
   }
@@ -33,7 +33,7 @@ function cartReducer(state, action) {
 export function CartProvider({ children }) {
   const [state, dispatch] = useReducer(cartReducer, initialState);
 
-  // Fetch cart
+  // 🔹 Fetch cart from backend
   const fetchCart = async () => {
     dispatch({ type: "REQUEST" });
     try {
@@ -47,14 +47,12 @@ export function CartProvider({ children }) {
     }
   };
 
-  // Auto load cart when provider mounts ✅
   useEffect(() => {
     fetchCart();
   }, []);
 
-  // Add item
+  // 🔹 Add item (auto merges + updates instantly)
   const addToCart = async (productId, qty = 1) => {
-    dispatch({ type: "REQUEST" });
     try {
       const { data } = await cartAPI.add(productId, qty);
       dispatch({ type: "SUCCESS", payload: data });
@@ -66,10 +64,9 @@ export function CartProvider({ children }) {
     }
   };
 
-  // Update quantity
+  // 🔹 Update quantity
   const updateCartQty = async (productId, qty) => {
-    if (!qty || qty <= 0) return; // prevent invalid qty
-    dispatch({ type: "REQUEST" });
+    if (qty <= 0) return removeFromCart(productId);
     try {
       const { data } = await cartAPI.update(productId, qty);
       dispatch({ type: "SUCCESS", payload: data });
@@ -81,9 +78,8 @@ export function CartProvider({ children }) {
     }
   };
 
-  // Remove item
+  // 🔹 Remove item
   const removeFromCart = async (productId) => {
-    dispatch({ type: "REQUEST" });
     try {
       const { data } = await cartAPI.remove(productId);
       dispatch({ type: "SUCCESS", payload: data });
@@ -95,23 +91,29 @@ export function CartProvider({ children }) {
     }
   };
 
-  // Clear cart
+  // 🔹 Clear all
   const clearCart = async () => {
-    dispatch({ type: "REQUEST" });
     try {
       const { data } = await cartAPI.clear();
-      dispatch({ type: "SUCCESS", payload: data }); // backend should return { items: [], totalPrice: 0 }
+      dispatch({ type: "SUCCESS", payload: data });
     } catch (err) {
       dispatch({
         type: "FAILURE",
-        payload: err.response?.data?.message || "Clear cart failed",
+        payload: err.response?.data?.message || "Clear failed",
       });
     }
   };
 
   return (
     <CartContext.Provider
-      value={{ state, fetchCart, addToCart, updateCartQty, removeFromCart, clearCart }}
+      value={{
+        state,
+        fetchCart,
+        addToCart,
+        updateCartQty,
+        removeFromCart,
+        clearCart,
+      }}
     >
       {children}
     </CartContext.Provider>

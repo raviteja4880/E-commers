@@ -30,7 +30,7 @@ function Layout({ children }) {
 }
 
 function App() {
-  const userInfo = localStorage.getItem("userInfo"); // ✅ define here
+  const userInfo = localStorage.getItem("userInfo");
 
   return (
     <CartProvider>
