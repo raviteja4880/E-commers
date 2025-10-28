@@ -63,6 +63,8 @@ export const orderAPI = {
 export const paymentAPI = {
   initiate: (payload) => API.post("/payment/initiate", payload),
   verify: (orderId) => API.post(`/payment/verify/${orderId}`),
+  confirm: (orderId) => API.post(`/payment/confirm/${orderId}`),
 };
+
 
 export { API };

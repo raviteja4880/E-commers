@@ -1,5 +1,11 @@
 import React from "react";
-import { BrowserRouter as Router, Routes, Route, useLocation, Navigate } from "react-router-dom";
+import {
+  BrowserRouter as Router,
+  Routes,
+  Route,
+  useLocation,
+  Navigate,
+} from "react-router-dom";
 import Navbar from "./pages/Navbar";
 import Home from "./pages/Home";
 import Cart from "./pages/Cart";
@@ -12,6 +18,8 @@ import ProductDetails from "./pages/ProductDetails";
 import PaymentPage from "./pages/PaymentPage";
 import MyOrdersPage from "./pages/MyOrdersPage";
 
+import { ToastContainer } from "react-toastify";
+import "react-toastify/dist/ReactToastify.css";
 
 // Wrapper to conditionally show Navbar
 function Layout({ children }) {
@@ -42,13 +50,27 @@ function App() {
             <Route path="/order-success/:orderId" element={<OrderSuccess />} />
             <Route path="/login" element={<Login />} />
             <Route path="/register" element={<Register />} />
-            <Route path="/my-orders" element={<MyOrdersPage  />} />
+            <Route path="/my-orders" element={<MyOrdersPage />} />
             <Route path="/product/:id" element={<ProductDetails />} />
             <Route path="/payment/:orderId" element={<PaymentPage />} />
             <Route
-              path="/checkout" element={userInfo ? <CheckoutPage /> : <Navigate to="/login" />}/>
+              path="/checkout"
+              element={
+                userInfo ? <CheckoutPage /> : <Navigate to="/login" />
+              }
+            />
           </Routes>
         </Layout>
+
+        <ToastContainer
+          position="top-right"
+          autoClose={5000}
+          hideProgressBar={false}
+          newestOnTop={false}
+          closeOnClick
+          pauseOnHover
+          theme="colored"
+        />
       </Router>
     </CartProvider>
   );

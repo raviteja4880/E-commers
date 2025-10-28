@@ -36,3 +36,25 @@
     transform: rotate(360deg);
   }
 }
+
+.nav-link {
+  color: #333 !important;
+  transition: color 0.2s ease;
+}
+
+.nav-link:hover {
+  color: #0d6efd !important;
+}
+
+.dropdown-menu {
+  min-width: 220px;
+}
+
+@media (max-width: 768px) {
+  .dropdown-menu {
+    position: static !important;
+    width: 100%;
+    box-shadow: none !important;
+  }
+}
+
