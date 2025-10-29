@@ -11,6 +11,12 @@ function Cart() {
   if (loading) return <Loader />;
   if (error) return <p className="text-center mt-5 text-danger">{error}</p>;
 
+  // ✅ Helper function to handle safe updates
+  const handleQuantityChange = (productId, value) => {
+    const qty = Math.max(1, Number(value) || 1); // Prevents 0 or NaN
+    updateCartQty(productId, qty);
+  };
+
   return (
     <div className="container mt-4 mb-5">
       <h2 className="fw-bold mb-4 text-center">My Cart</h2>
@@ -49,7 +55,9 @@ function Cart() {
                         <div className="d-flex align-items-center justify-content-center">
                           <button
                             className="btn btn-sm btn-outline-secondary me-2"
-                            onClick={() => updateCartQty(productId, item.qty - 1)}
+                            onClick={() =>
+                              handleQuantityChange(productId, item.qty - 1)
+                            }
                             disabled={item.qty <= 1}
                           >
                             -
@@ -67,16 +75,20 @@ function Cart() {
                               padding: "4px",
                             }}
                             onChange={(e) =>
-                              updateCartQty(
-                                productId,
-                                Math.max(1, Number(e.target.value) || 1)
-                              )
+                              handleQuantityChange(productId, e.target.value)
                             }
+                            onBlur={(e) => {
+                              if (!e.target.value || e.target.value < 1) {
+                                handleQuantityChange(productId, 1);
+                              }
+                            }}
                           />
 
                           <button
                             className="btn btn-sm btn-outline-secondary ms-2"
-                            onClick={() => updateCartQty(productId, item.qty + 1)}
+                            onClick={() =>
+                              handleQuantityChange(productId, item.qty + 1)
+                            }
                           >
                             +
                           </button>

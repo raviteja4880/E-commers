@@ -1,6 +1,7 @@
 import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import axios from "axios";
+import { toast } from "react-toastify"; 
 
 function Register() {
   const [name, setName] = useState("");
@@ -10,30 +11,34 @@ function Register() {
   const [error, setError] = useState("");
   const navigate = useNavigate();
 
- const handleRegister = async (e) => {
-  e.preventDefault();
-  setError("");
+  const handleRegister = async (e) => {
+    e.preventDefault();
+    setError("");
 
-  if (password !== confirmPassword) {
-    setError("Passwords do not match");
-    return;
-  }
+    if (password !== confirmPassword) {
+      setError("Passwords do not match");
+      toast.error("Passwords do not match"); 
+      return;
+    }
 
-  try {
-    const response = await axios.post(
-      "https://ecommerce-backend-zput.onrender.com/api/auth/register",
-      { name, email, password }
-    );
+    try {
+      const response = await axios.post(
+        "https://ecommercebackend-ypyf.onrender.com/api/auth/register",
+        { name, email, password }
+      );
 
-    const { user, token } = response.data;
-    localStorage.setItem("user", JSON.stringify(user));
-    localStorage.setItem("token", token);
+      const { user, token } = response.data;
+      localStorage.setItem("user", JSON.stringify(user));
+      localStorage.setItem("token", token);
 
-    navigate("/login"); 
-  } catch (err) {
-    setError(err.response?.data?.message || "Registration failed. Try again.");
-  }
-};
+      toast.success("Registration successful! Please login."); 
+      setTimeout(() => navigate("/login"), 1500); 
+    } catch (err) {
+      const errorMsg = err.response?.data?.message || "Registration failed. Try again.";
+      setError(errorMsg);
+      toast.error(errorMsg); 
+    }
+  };
 
   return (
     <div className="container d-flex justify-content-center align-items-center vh-100">

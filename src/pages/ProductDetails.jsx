@@ -3,6 +3,8 @@ import { useParams, useNavigate } from "react-router-dom";
 import { productAPI } from "../services/api";
 import { useCart } from "../context/CartContext";
 import ProductCard from "../components/products/ProductCard";
+import { toast } from "react-toastify";
+import Loader from "./Loader";
 
 function ProductDetails() {
   const { id } = useParams();
@@ -15,22 +17,19 @@ function ProductDetails() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
 
+  // Fetch product and related ones
   useEffect(() => {
     const fetchProductAndOthers = async () => {
       try {
-        // ✅ Fetch main product
         const { data: mainProduct } = await productAPI.getById(id);
         setProduct(mainProduct);
 
-        // ✅ Fetch all products
         const { data: allProducts } = await productAPI.getAll();
-
-        // ✅ Filter out the main product
         const remaining = allProducts.filter((p) => p._id !== id);
         setOtherProducts(remaining);
       } catch (err) {
         setError("Failed to load product.");
-        console.error("❌ Product fetch error:", err.response?.data || err.message);
+        console.error("Product fetch error:", err.response?.data || err.message);
       } finally {
         setLoading(false);
       }
@@ -39,13 +38,35 @@ function ProductDetails() {
     fetchProductAndOthers();
   }, [id]);
 
-  if (loading) return <p className="text-center mt-5">Loading product...</p>;
+  if (loading) return <Loader />;
   if (error) return <p className="text-center mt-5 text-danger">{error}</p>;
   if (!product) return <p className="text-center mt-5">Product not found.</p>;
 
+  // Handle quantity change
   const handleQtyChange = (val) => {
     if (val < 1) return;
     setQty(val);
+  };
+
+  // Add to cart with login check only when button pressed
+  const handleAddToCart = async (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+
+    const userInfo = JSON.parse(localStorage.getItem("userInfo"));
+
+    if (!userInfo?.token) {
+      toast.warning("You need to log in to access the cart");
+      navigate("/login");
+      return;
+    }
+
+    try {
+      await addToCart(product._id, 1);
+      toast.success(`${product.name} added to cart`);
+    } catch {
+      toast.error("Failed to add to cart");
+    }
   };
 
   return (
@@ -53,7 +74,11 @@ function ProductDetails() {
       {/* Main product */}
       <div className="row mb-5">
         <div className="col-md-6">
-          <img src={product.image} alt={product.name} className="img-fluid rounded" />
+          <img
+            src={product.image}
+            alt={product.name}
+            className="img-fluid rounded"
+          />
         </div>
         <div className="col-md-6">
           <h2>{product.name}</h2>
@@ -85,19 +110,13 @@ function ProductDetails() {
             </button>
           </div>
 
-          <button
-            className="btn btn-primary mt-2"
-            onClick={() => {
-              addToCart(product._id, qty);
-              navigate("/cart");
-            }}
-          >
+          <button className="btn btn-primary mt-2" onClick={handleAddToCart}>
             Add to Cart
           </button>
         </div>
       </div>
 
-      {/* Remaining products */}
+      {/* Other recommended products */}
       {otherProducts.length > 0 && (
         <>
           <h3>Other Products You May Like</h3>

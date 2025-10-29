@@ -13,7 +13,6 @@ function ProductCard({ product }) {
 
     const userInfo = JSON.parse(localStorage.getItem("userInfo"));
 
-    // 🔒 Check login before adding to cart
     if (!userInfo?.token) {
       toast.warning("You need to log in to access the cart");
       navigate("/login");

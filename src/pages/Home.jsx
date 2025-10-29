@@ -38,7 +38,6 @@ function Home() {
     } finally {
       setLoading(false);
 
-      // Hide banner a short time after loading completes
       setTimeout(() => setShowBanner(false), 1000);
     }
   };
