@@ -104,26 +104,50 @@ function Navbar() {
 
                   {dropdownOpen && (
                     <ul
-                      className="dropdown-menu dropdown-menu-end show mt-2 shadow-sm border-0"
+                      className="dropdown-menu dropdown-menu-end show mt-2 border-0 shadow"
                       style={{
                         position: "absolute",
                         right: 0,
                         top: "100%",
-                        borderRadius: "10px",
+                        borderRadius: "12px",
+                        minWidth: "230px",
+                        padding: "0.6rem 0.5rem",
+                        background: "white",
                       }}
                     >
-                      <li className="dropdown-item text-muted small">
-                        <strong>{userInfo.name}</strong>
-                        <br />
-                        <span>{userInfo.email}</span>
+                      {/* User Info */}
+                      <li
+                        className="dropdown-item"
+                        style={{
+                          padding: "0.75rem 1rem",
+                          borderRadius: "8px",
+                          background: "#f8f9fa",
+                          marginBottom: "0.4rem",
+                          lineHeight: "1.3",
+                        }}
+                      >
+                        <div style={{ fontWeight: 600, fontSize: "0.95rem", color: "#333" }}>
+                          {userInfo.name}
+                        </div>
+                        <div style={{ fontSize: "0.85rem", color: "#777" }}>{userInfo.email}</div>
                       </li>
+
                       <li>
-                        <hr className="dropdown-divider" />
+                        <hr className="dropdown-divider my-2" />
                       </li>
+
+                      {/* Logout */}
                       <li>
                         <button
-                          className="dropdown-item text-danger d-flex align-items-center gap-2"
+                          className="dropdown-item d-flex align-items-center gap-2 text-danger fw-semibold"
+                          style={{
+                            padding: "0.7rem 1rem",
+                            borderRadius: "8px",
+                            transition: "all 0.2s ease-in-out",
+                          }}
                           onClick={handleLogout}
+                          onMouseOver={(e) => (e.currentTarget.style.background = "#fff5f5")}
+                          onMouseOut={(e) => (e.currentTarget.style.background = "transparent")}
                         >
                           <FaSignOutAlt size={16} />
                           Logout

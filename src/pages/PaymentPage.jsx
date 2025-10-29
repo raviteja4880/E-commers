@@ -4,6 +4,7 @@ import { orderAPI, paymentAPI } from "../services/api";
 import { useCart } from "../context/CartContext";
 import { ToastContainer, toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
+import Loader from "./Loader";
 
 function PaymentPage() {
   const { orderId } = useParams();
@@ -16,11 +17,7 @@ function PaymentPage() {
   const [qrCode, setQrCode] = useState(null);
   const [method, setMethod] = useState("qr");
   const [paymentId, setPaymentId] = useState(null);
-  const [cardDetails, setCardDetails] = useState({
-    number: "",
-    expiry: "",
-    cvv: "",
-  });
+  const [cardDetails, setCardDetails] = useState({ number: "", expiry: "", cvv: "" });
 
   const pollingRef = useRef(null);
 
@@ -36,24 +33,19 @@ function PaymentPage() {
     };
     fetchOrder();
 
-    // Cleanup polling on unmount
     return () => {
       if (pollingRef.current) clearInterval(pollingRef.current);
     };
   }, [orderId]);
 
-  // ✅ Initiate payment automatically when QR selected
+  // ✅ Auto-initiate QR payment
   useEffect(() => {
-    if (method === "qr" && order) {
-      handleInitiatePayment();
-    }
+    if (method === "qr" && order) handleInitiatePayment();
   }, [method, order]);
 
-  // ✅ Initiate payment request
   const handleInitiatePayment = async () => {
     setLoading(true);
     setError("");
-
     try {
       const payload = {
         orderId,
@@ -68,8 +60,6 @@ function PaymentPage() {
       if (method === "qr") {
         setQrCode(data.qrCodeUrl);
         toast.info("QR Code generated. Please complete payment in your UPI app.");
-
-        // ✅ Start polling to verify payment every 5 seconds
         startPolling();
       }
     } catch (err) {
@@ -80,40 +70,33 @@ function PaymentPage() {
     }
   };
 
-  // ✅ Confirm payment manually (user clicks button)
   const handleConfirmPayment = async () => {
     if (!paymentId) return;
     setLoading(true);
-    setError("");
-
     try {
       await paymentAPI.confirm(orderId);
       toast.success("Payment confirmed successfully!");
       clearCart();
 
-      // Stop polling (if QR)
       if (pollingRef.current) clearInterval(pollingRef.current);
-
       setTimeout(() => navigate(`/order-success/${orderId}`), 1500);
     } catch (err) {
-      setError(err.response?.data?.message || "Payment confirmation failed");
       toast.error("Payment confirmation failed");
+      setError(err.response?.data?.message || "Payment confirmation failed");
     } finally {
       setLoading(false);
     }
   };
 
-  // ✅ Polling: auto check payment status every 5 sec
   const startPolling = () => {
     if (pollingRef.current) clearInterval(pollingRef.current);
-
     pollingRef.current = setInterval(async () => {
       try {
         const { data } = await paymentAPI.verify(orderId);
         if (data.status === "paid") {
           toast.success("Payment verified successfully!");
-          clearInterval(pollingRef.current);
           clearCart();
+          clearInterval(pollingRef.current);
           navigate(`/order-success/${orderId}`);
         }
       } catch (err) {
@@ -122,16 +105,17 @@ function PaymentPage() {
     }, 5000);
   };
 
-  if (!order) return <p className="text-center mt-5">Loading order...</p>;
+  if (!order) return <Loader />;
 
   return (
     <div className="container mt-4">
       <ToastContainer position="top-right" autoClose={2000} />
       <h2>Payment for Order #{order._id}</h2>
       <h5 className="mb-3">Total Amount: ₹{order.totalPrice}</h5>
+
       {error && <div className="alert alert-danger">{error}</div>}
 
-      {/* ✅ Select Payment Method */}
+      {/* Method selector */}
       <div className="mb-3">
         <label className="form-label">Choose Payment Method:</label>
         <select
@@ -148,16 +132,12 @@ function PaymentPage() {
         </select>
       </div>
 
-      {/* ✅ QR Payment */}
+      {/* QR Payment */}
       {method === "qr" && qrCode && (
-        <div className="mb-3 text-center">
-          <img
-            src={qrCode}
-            alt="QR Code"
-            style={{ width: 220, height: 220, objectFit: "contain" }}
-          />
+        <div className="text-center">
+          <img src={qrCode} alt="QR Code" style={{ width: 220, height: 220 }} />
           <p className="mt-2 text-muted">
-            Scan the QR code with your UPI app to complete payment of ₹{order.totalPrice}.
+            Scan this QR to pay ₹{order.totalPrice}.
           </p>
           <button
             className="btn btn-success"
@@ -169,7 +149,7 @@ function PaymentPage() {
         </div>
       )}
 
-      {/* ✅ Card Payment */}
+      {/* Card Payment */}
       {method === "card" && (
         <div className="card p-3 shadow-sm">
           <input
@@ -209,7 +189,7 @@ function PaymentPage() {
         </div>
       )}
 
-      {/* ✅ COD */}
+      {/* COD */}
       {method === "cod" && (
         <div className="text-center mt-3">
           <button

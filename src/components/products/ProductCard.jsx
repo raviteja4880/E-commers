@@ -1,9 +1,32 @@
 import React from "react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { useCart } from "../../context/CartContext";
+import { toast } from "react-toastify";
 
 function ProductCard({ product }) {
   const { addToCart } = useCart();
+  const navigate = useNavigate();
+
+  const handleAddToCart = async (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+
+    const userInfo = JSON.parse(localStorage.getItem("userInfo"));
+
+    // 🔒 Check login before adding to cart
+    if (!userInfo?.token) {
+      toast.warning("You need to log in to access the cart");
+      navigate("/login");
+      return;
+    }
+
+    try {
+      await addToCart(product._id, 1);
+      toast.success(`${product.name} added to cart`);
+    } catch {
+      toast.error("Failed to add to cart");
+    }
+  };
 
   return (
     <div style={styles.card}>
@@ -19,14 +42,7 @@ function ProductCard({ product }) {
         <p style={styles.price}>₹{product.price}</p>
       </Link>
 
-      <button
-        style={styles.button}
-        onClick={(e) => {
-          e.preventDefault();
-          e.stopPropagation();
-          addToCart(product._id, 1);
-        }}
-      >
+      <button style={styles.button} onClick={handleAddToCart}>
         Add to Cart
       </button>
     </div>
@@ -45,6 +61,7 @@ const styles = {
     boxShadow: "0 2px 6px rgba(0,0,0,0.1)",
     height: "420px",
     textAlign: "center",
+    transition: "transform 0.2s ease",
   },
   imageWrapper: {
     height: "200px",
@@ -63,7 +80,7 @@ const styles = {
     fontSize: "16px",
     fontWeight: 600,
     margin: "5px 0",
-    height: "40px", // consistent text height
+    height: "40px",
     overflow: "hidden",
   },
   brand: {

@@ -1,0 +1,26 @@
+.scrolling-banner {
+  overflow: hidden;
+  white-space: nowrap;
+  position: relative;
+  padding: 8px 0;
+  background: rgba(0, 0, 0, 0.04); 
+  border-bottom: 1px solid rgba(0, 0, 0, 0.05);
+}
+
+.scrolling-text {
+  display: inline-block;
+  padding-left: 100%;
+  animation: scroll-left 15s linear infinite;
+  font-size: 0.95rem;
+  color: #555;
+  font-weight: 500;
+}
+
+@keyframes scroll-left {
+  0% {
+    transform: translateX(100%);
+  }
+  100% {
+    transform: translateX(-100%);
+  }
+}

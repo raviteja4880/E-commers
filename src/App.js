@@ -17,7 +17,6 @@ import { CartProvider } from "./context/CartContext";
 import ProductDetails from "./pages/ProductDetails";
 import PaymentPage from "./pages/PaymentPage";
 import MyOrdersPage from "./pages/MyOrdersPage";
-
 import { ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 

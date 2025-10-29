@@ -1,13 +1,14 @@
 import React, { useEffect, useState, useRef } from "react";
 import { orderAPI } from "../services/api";
 import { Link, useNavigate } from "react-router-dom";
+import Loader from "./Loader";
 
 function MyOrdersPage() {
   const [orders, setOrders] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const pollingRef = useRef(null);
-  const ordersRef = useRef(orders); // Ref to keep latest orders
+  const ordersRef = useRef(orders); 
   const navigate = useNavigate();
 
   // Keep ref updated
@@ -66,7 +67,7 @@ function MyOrdersPage() {
     return () => clearInterval(interval);
   }, []);
 
-  if (loading) return <p className="text-center mt-5">Loading orders...</p>;
+  if (loading) return <Loader />;
   if (error) return <div className="alert alert-danger">{error}</div>;
   if (orders.length === 0) return <p className="text-center mt-5">No orders yet.</p>;
 

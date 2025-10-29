@@ -46,10 +46,11 @@ export const productAPI = {
 export const cartAPI = {
   get: () => API.get("/cart"),
   add: (productId, qty = 1) => API.post("/cart/add", { productId, qty }),
-  update: (productId, qty) => API.put(`/cart/${productId}`, { qty }),
-  remove: (productId) => API.delete(`/cart/${productId}`),
+  update: (productId, qty) => API.put(`/cart/${productId}`, { qty }), 
+  remove: (productId) => API.delete(`/cart/${productId}`),             
   clear: () => API.delete("/cart"),
 };
+
 
 // ================= Orders API =================
 export const orderAPI = {
@@ -57,6 +58,7 @@ export const orderAPI = {
   getMyOrders: () => API.get("/orders/my"),
   getById: (id) => API.get(`/orders/${id}`),
   pay: (id, paymentResult) => API.put(`/orders/${id}/pay`, paymentResult),
+  verifyPayment: (id) => API.get(`/orders/${id}/verify-payment`),
 };
 
 // ================= Payment API =================
