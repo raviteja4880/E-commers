@@ -38,7 +38,7 @@ function cartReducer(state, action) {
 export function CartProvider({ children }) {
   const [state, dispatch] = useReducer(cartReducer, initialState);
 
-  // ✅ Centralized function to safely fetch the user's cart
+  // Centralized function to safely fetch the user's cart
   const fetchCart = async () => {
     dispatch({ type: "REQUEST" });
     try {
@@ -57,18 +57,18 @@ export function CartProvider({ children }) {
     }
   };
 
-  // ✅ Load cart only if user is logged in
+  // Load cart only if user is logged in
   useEffect(() => {
     const userInfo = JSON.parse(localStorage.getItem("userInfo"));
     if (userInfo?.token) fetchCart();
   }, []);
 
-  // ✅ Add to Cart
+  // Add to Cart
   const addToCart = async (productId, qty = 1) => {
     dispatch({ type: "REQUEST" });
     try {
       await cartAPI.add(productId, qty);
-      await fetchCart(); // ✅ Always refresh after modification
+      await fetchCart(); 
     } catch (err) {
       if (err.response?.status === 401) {
         dispatch({ type: "CLEAR" });
@@ -108,7 +108,7 @@ const removeFromCart = async (productId) => {
   }
 };
 
-  // ✅ Clear Cart
+  // Clear Cart
   const clearCart = async () => {
     dispatch({ type: "REQUEST" });
     try {

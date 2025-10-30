@@ -11,9 +11,9 @@ function Cart() {
   if (loading) return <Loader />;
   if (error) return <p className="text-center mt-5 text-danger">{error}</p>;
 
-  // ✅ Helper function to handle safe updates
+  // Helper function to handle safe updates
   const handleQuantityChange = (productId, value) => {
-    const qty = Math.max(1, Number(value) || 1); // Prevents 0 or NaN
+    const qty = Math.max(1, Number(value) || 1); 
     updateCartQty(productId, qty);
   };
 

@@ -9,7 +9,7 @@ function CheckoutPage() {
   const navigate = useNavigate();
 
   const [address, setAddress] = useState("");
-  const [paymentMethod, setPaymentMethod] = useState("COD"); // default to COD
+  const [paymentMethod, setPaymentMethod] = useState("COD");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
 
