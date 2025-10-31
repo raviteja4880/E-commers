@@ -1,16 +1,26 @@
+/* Floating banner container */
+.scrolling-banner-container {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  z-index: 1050;
+  background: linear-gradient(to right, #fff, #f8f9fa);
+  border-bottom: 1px solid #ddd;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+  animation: fadeIn 0.3s ease-in-out;
+}
 
+/* Banner styling */
 .scrolling-banner {
   overflow: hidden;
   white-space: nowrap;
-  position: relative;
   height: 40px;
   line-height: 40px;
-  background: linear-gradient(to right, #fff, #f8f9fa);
   color: #555;
-  border: 1px solid #ddd;
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
 }
 
+/* Scrolling text animation */
 .scrolling-text {
   display: inline-block;
   white-space: nowrap;
@@ -22,11 +32,24 @@
   padding-right: 2rem;
 }
 
+/* Keyframes for scrolling */
 @keyframes scrollLoop {
   0% {
     transform: translateX(0);
   }
   100% {
     transform: translateX(-50%);
+  }
+}
+
+/* Smooth fade in/out */
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(-10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
   }
 }

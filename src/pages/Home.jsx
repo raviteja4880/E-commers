@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from "react";
 import { productAPI } from "../services/api";
 import ProductCard from "../components/products/ProductCard";
+import Loader from "../pages/Loader";
 import "../scrollMessage.css";
 
 function Home() {
@@ -9,29 +10,24 @@ function Home() {
   const [error, setError] = useState("");
   const [showBanner, setShowBanner] = useState(true);
 
-  // Check login status (from localStorage or context)
   const userInfo = localStorage.getItem("userInfo");
 
-  // Fetch products and group them by category
   const fetchProducts = async () => {
     setLoading(true);
     setError("");
 
-    // Only show banner for guest users
     if (!userInfo) setShowBanner(true);
     else setShowBanner(false);
 
     try {
       const { data } = await productAPI.getAll();
 
-      // Group products by category
       const grouped = data.reduce((acc, product) => {
         if (!acc[product.category]) acc[product.category] = [];
         acc[product.category].push(product);
         return acc;
       }, {});
 
-      // Sort alphabetically within each category
       Object.keys(grouped).forEach((cat) => {
         grouped[cat].sort((a, b) => a.name.localeCompare(b.name));
       });
@@ -42,57 +38,47 @@ function Home() {
       setError("Failed to load products.");
     } finally {
       setLoading(false);
-
       if (!userInfo) {
-        setTimeout(() => setShowBanner(false), 1000);
+        setTimeout(() => setShowBanner(false), 2000);
       }
     }
   };
 
   useEffect(() => {
     fetchProducts();
-
-    // Hide horizontal scrollbar for logged-in users
-    if (userInfo) {
-      document.body.style.overflowX = "hidden";
-    }
-
-    return () => {
-      document.body.style.overflowX = "auto";
-    };
+    if (userInfo) document.body.style.overflowX = "hidden";
+    return () => (document.body.style.overflowX = "auto");
   }, []);
 
-  // Global loader
-  if (loading) return <p>Loading products...</p>;
-
   return (
-    <div className="container mt-4">
-      {/* Scrolling message shown only if NOT logged in */}
+    <div className="container mt-4 position-relative">
+      {/* Floating Scrolling Banner — visible during loading or wake-up */}
       {!userInfo && showBanner && (
-        <div
-          className="scrolling-banner text-center fw-semibold mb-3"
-          style={{
-            background: "linear-gradient(to right, #fff, #f8f9fa)",
-            color: "#555",
-            border: "1px solid #ddd",
-            overflow: "hidden",
-          }}
-        >
-          <div className="scrolling-text">
-            <span>
-              Backend is waking up... Please wait a few seconds while we load the
-              products. Thank you for your patience. &nbsp;&nbsp;&nbsp;
-            </span>
-            <span>
-              Backend is waking up... Please wait a few seconds while we load the
-              products. Thank you for your patience. &nbsp;&nbsp;&nbsp;
-            </span>
+        <div className="scrolling-banner-container">
+          <div className="scrolling-banner text-center fw-semibold">
+            <div className="scrolling-text">
+              <span>
+                Backend is waking up... Please wait a few seconds while we load
+                the products. Thank you for your patience. &nbsp;&nbsp;&nbsp;
+              </span>
+              <span>
+                Backend is waking up... Please wait a few seconds while we load
+                the products. Thank you for your patience. &nbsp;&nbsp;&nbsp;
+              </span>
+            </div>
           </div>
         </div>
       )}
 
+      {/* Loader always below the floating banner */}
+      {loading && (
+        <div className="d-flex justify-content-center align-items-center mt-5">
+          <Loader />
+        </div>
+      )}
+
       {/* Error state */}
-      {error && (
+      {!loading && error && (
         <div className="text-center mt-5 text-danger">
           <p>{error}</p>
           <button className="btn btn-primary" onClick={fetchProducts}>
@@ -102,12 +88,13 @@ function Home() {
       )}
 
       {/* No products */}
-      {!error && Object.keys(groupedProducts).length === 0 && (
+      {!error && !loading && Object.keys(groupedProducts).length === 0 && (
         <p className="text-center mt-5">No products available.</p>
       )}
 
       {/* Products grouped by category */}
       {!error &&
+        !loading &&
         Object.keys(groupedProducts).map((category) => (
           <div key={category} className="mb-5">
             <h3 className="mb-4 text-capitalize fw-semibold">{category}</h3>
