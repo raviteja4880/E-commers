@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { useCart } from "../context/CartContext";
 import {
@@ -17,11 +17,24 @@ function Navbar() {
     state.cartItems?.reduce((acc, item) => acc + item.qty, 0) || 0;
 
   const [dropdownOpen, setDropdownOpen] = useState(false);
+  const dropdownRef = useRef(null); // 🔹 ref for dropdown container
 
   const handleLogout = () => {
     localStorage.removeItem("userInfo");
     navigate("/login");
   };
+
+  // 🔹 Close dropdown when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (dropdownRef.current && !dropdownRef.current.contains(event.target)) {
+        setDropdownOpen(false);
+      }
+    };
+    document.addEventListener("mousedown", handleClickOutside);
+
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
 
   return (
     <nav
@@ -90,7 +103,7 @@ function Navbar() {
                 </li>
 
                 {/* User Dropdown */}
-                <li className="nav-item dropdown">
+                <li className="nav-item dropdown" ref={dropdownRef}>
                   <div
                     className="nav-link d-flex align-items-center gap-2"
                     style={{ cursor: "pointer" }}
@@ -119,17 +132,25 @@ function Navbar() {
                       <li
                         className="dropdown-item"
                         style={{
-                          padding: "0.75rem 1rem",
+                          padding: "1rem 2rem",
                           borderRadius: "8px",
                           background: "#f8f9fa",
                           marginBottom: "0.4rem",
-                          lineHeight: "1.3",
+                          lineHeight: "1.5",
                         }}
                       >
-                        <div style={{ fontWeight: 600, fontSize: "0.95rem", color: "#333" }}>
+                        <div
+                          style={{
+                            fontWeight: 600,
+                            fontSize: "0.95rem",
+                            color: "#333",
+                          }}
+                        >
                           {userInfo.name}
                         </div>
-                        <div style={{ fontSize: "0.85rem", color: "#777" }}>{userInfo.email}</div>
+                        <div style={{ fontSize: "0.85rem", color: "#777" }}>
+                          {userInfo.email}
+                        </div>
                       </li>
 
                       <li>
@@ -146,8 +167,12 @@ function Navbar() {
                             transition: "all 0.2s ease-in-out",
                           }}
                           onClick={handleLogout}
-                          onMouseOver={(e) => (e.currentTarget.style.background = "#fff5f5")}
-                          onMouseOut={(e) => (e.currentTarget.style.background = "transparent")}
+                          onMouseOver={(e) =>
+                            (e.currentTarget.style.background = "#fff5f5")
+                          }
+                          onMouseOut={(e) =>
+                            (e.currentTarget.style.background = "transparent")
+                          }
                         >
                           <FaSignOutAlt size={16} />
                           Logout

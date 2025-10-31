@@ -2,13 +2,20 @@ import React, { useEffect, useState, useRef } from "react";
 import { orderAPI } from "../services/api";
 import { Link, useNavigate } from "react-router-dom";
 import Loader from "./Loader";
+import {
+  FaCheckCircle,
+  FaTimesCircle,
+  FaClock,
+  FaTruck,
+  FaMoneyBillWave,
+} from "react-icons/fa";
 
 function MyOrdersPage() {
   const [orders, setOrders] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const pollingRef = useRef(null);
-  const ordersRef = useRef(orders); 
+  const ordersRef = useRef(orders);
   const navigate = useNavigate();
 
   // Keep ref updated
@@ -30,12 +37,12 @@ function MyOrdersPage() {
 
   // Polling payment status every 3 seconds
   useEffect(() => {
-    fetchOrders(); // initial fetch
+    fetchOrders();
 
     pollingRef.current = setInterval(async () => {
       try {
         const qrOrders = ordersRef.current.filter(
-          o => !o.isPaid && o.paymentMethod === "qr"
+          (o) => !o.isPaid && o.paymentMethod === "qr"
         );
 
         if (qrOrders.length === 0) return;
@@ -44,10 +51,14 @@ function MyOrdersPage() {
           const { data } = await orderAPI.verifyPayment(order._id);
 
           if (data.status === "paid") {
-            setOrders(prevOrders =>
-              prevOrders.map(o =>
+            setOrders((prevOrders) =>
+              prevOrders.map((o) =>
                 o._id === order._id
-                  ? { ...o, isPaid: true, paymentMethod: data.paymentMethod || o.paymentMethod }
+                  ? {
+                      ...o,
+                      isPaid: true,
+                      paymentMethod: data.paymentMethod || o.paymentMethod,
+                    }
                   : o
               )
             );
@@ -59,9 +70,9 @@ function MyOrdersPage() {
     }, 3000);
 
     return () => clearInterval(pollingRef.current);
-  }, []); // Safe to keep empty array because we use ordersRef
+  }, []);
 
-  // Optional: fetch orders every 10s to catch new orders or changes
+  // Refetch orders every 10s for updates
   useEffect(() => {
     const interval = setInterval(fetchOrders, 10000);
     return () => clearInterval(interval);
@@ -69,42 +80,76 @@ function MyOrdersPage() {
 
   if (loading) return <Loader />;
   if (error) return <div className="alert alert-danger">{error}</div>;
-  if (orders.length === 0) return <p className="text-center mt-5">No orders yet.</p>;
+  if (orders.length === 0)
+    return <p className="text-center mt-5">No orders yet.</p>;
 
   return (
     <div className="container mt-4">
-      <h2>My Orders</h2>
-      {orders.map(order => (
+      <h2 className="mb-4">My Orders</h2>
+      {orders.map((order) => (
         <div key={order._id} className="card mb-3 p-3 shadow-sm">
           <div className="d-flex justify-content-between mb-2">
-            <span>Order #{order._id}</span>
-            <span>{new Date(order.createdAt).toLocaleString()}</span>
+            <span className="fw-semibold">Order #{order._id}</span>
+            <span className="text-muted">
+              {new Date(order.createdAt).toLocaleString()}
+            </span>
           </div>
 
           <ul className="list-group mb-2">
             {order.items.map((item, idx) => (
-              <li key={idx} className="list-group-item d-flex align-items-center">
+              <li
+                key={idx}
+                className="list-group-item d-flex align-items-center"
+              >
                 <img
                   src={item.product?.image || item.image}
                   alt={item.name}
-                  style={{ width: 50, marginRight: 10 }}
+                  style={{ width: 50, marginRight: 10, borderRadius: "6px" }}
                 />
-                <span>{item.name} x {item.qty}</span>
-                <span className="ms-auto">₹{item.price * item.qty}</span>
+                <span>
+                  {item.name} <small className="text-muted">x {item.qty}</small>
+                </span>
+                <span className="ms-auto fw-semibold">
+                  ₹{item.price * item.qty}
+                </span>
               </li>
             ))}
           </ul>
 
-          <p>Total: <strong>₹{order.totalPrice}</strong></p>
-          <p>
-            Payment Status: <strong>{order.isPaid ? "Paid ✅" : "Pending ⏳"}</strong>
-          </p>
-          <p>
-            Delivery Status: <strong>{order.isDelivered ? "Delivered ✅" : "Not Delivered ❌"}</strong>
+          <p className="mb-1">
+            <FaMoneyBillWave className="me-2 text-success" />
+            Total: <strong>₹{order.totalPrice}</strong>
           </p>
 
-          <div className="d-flex gap-2">
-            <Link to={`/order-success/${order._id}`} className="btn btn-sm btn-primary">
+          <p className="mb-1">
+            {order.isPaid ? (
+              <span className="text-success d-flex align-items-center gap-2">
+                <FaCheckCircle /> Payment Status: Paid
+              </span>
+            ) : (
+              <span className="text-warning d-flex align-items-center gap-2">
+                <FaClock /> Payment Status: Pending
+              </span>
+            )}
+          </p>
+
+          <p className="mb-2">
+            {order.isDelivered ? (
+              <span className="text-success d-flex align-items-center gap-2">
+                <FaTruck /> Delivery Status: Delivered
+              </span>
+            ) : (
+              <span className="text-danger d-flex align-items-center gap-2">
+                <FaTimesCircle /> Delivery Status: Not Delivered
+              </span>
+            )}
+          </p>
+
+          <div className="d-flex gap-2 mt-2">
+            <Link
+              to={`/order-success/${order._id}`}
+              className="btn btn-sm btn-primary"
+            >
               View Details
             </Link>
 

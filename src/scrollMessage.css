@@ -4,11 +4,13 @@
   top: 0;
   left: 0;
   width: 100%;
-  z-index: 1050;
-  background: linear-gradient(to right, #fff, #f8f9fa);
+  background: linear-gradient(to right, #ffffff, #f8f9fa);
+  color: #555;
   border-bottom: 1px solid #ddd;
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
-  animation: fadeIn 0.3s ease-in-out;
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+  overflow: hidden;
+  z-index: 9999;
+  padding: 8px 0;
 }
 
 /* Banner styling */
