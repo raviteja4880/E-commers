@@ -2,7 +2,6 @@ import React, { useEffect, useState } from "react";
 import { useParams, Link } from "react-router-dom";
 import { orderAPI } from "../services/api";
 import Loader from "./Loader";
-import { CheckCircle, Clock, Truck, XCircle } from "lucide-react"; // ✅ Added icons
 
 function OrderSuccessPage() {
   const { orderId } = useParams();
@@ -16,10 +15,6 @@ function OrderSuccessPage() {
       try {
         const { data } = await orderAPI.getById(orderId);
         setOrder(data);
-        // show animation only if just placed (check via state or param if needed)
-        setShowAnimation(sessionStorage.getItem("orderPlaced") === "true");
-        sessionStorage.removeItem("orderPlaced");
-        setTimeout(() => setShowAnimation(false), 2400);
       } catch (err) {
         setError(err.response?.data?.message || "Failed to load order");
       } finally {
@@ -29,7 +24,16 @@ function OrderSuccessPage() {
     fetchOrder();
   }, [orderId]);
 
-  // inject keyframes once
+  // Trigger animation AFTER loading completes and order is available
+  useEffect(() => {
+    if (!loading && order) {
+      setShowAnimation(true);
+      const timer = setTimeout(() => setShowAnimation(false), 2400);
+      return () => clearTimeout(timer);
+    }
+  }, [loading, order]);
+
+  // Inject animations once
   useEffect(() => {
     if (!document.getElementById("order-success-animations")) {
       const style = document.createElement("style");
@@ -58,7 +62,7 @@ function OrderSuccessPage() {
         justifyContent: "center",
       }}
     >
-      {/* ✅ Success Animation (unchanged) */}
+      {/* ✅ Success animation overlay */}
       {showAnimation && (
         <div
           style={{
@@ -143,7 +147,7 @@ function OrderSuccessPage() {
         </div>
       )}
 
-      {/* ✅ Order Details Card (unchanged design, added icons) */}
+      {/* ✅ Order details section */}
       <div
         style={{
           width: "100%",
@@ -154,9 +158,7 @@ function OrderSuccessPage() {
           boxShadow: "0 6px 30px rgba(16,24,40,0.06)",
         }}
       >
-        <h2 style={{ color: "#0d6efd", marginBottom: 14 }}>
-          Order Confirmation
-        </h2>
+        <h2 style={{ color: "#0d6efd", marginBottom: 14 }}>Order Confirmation</h2>
 
         <div style={{ display: "flex", gap: 24, flexWrap: "wrap" }}>
           <div style={{ flex: 1, minWidth: 280 }}>
@@ -170,29 +172,11 @@ function OrderSuccessPage() {
                 {order.paymentMethod.toUpperCase()}
               </span>
             </p>
-            <p style={{ marginBottom: 8, display: "flex", alignItems: "center", gap: 6 }}>
+            <p style={{ marginBottom: 8 }}>
               <strong>Status:</strong>{" "}
-              {order.isPaid ? (
-                <span style={{ color: "#28a745", display: "flex", alignItems: "center", gap: 4 }}>
-                  <CheckCircle size={18} /> Paid
-                </span>
-              ) : (
-                <span style={{ color: "#f0ad4e", display: "flex", alignItems: "center", gap: 4 }}>
-                  <Clock size={18} /> Pending
-                </span>
-              )}
-            </p>
-            <p style={{ marginBottom: 8, display: "flex", alignItems: "center", gap: 6 }}>
-              <strong>Delivery:</strong>{" "}
-              {order.isDelivered ? (
-                <span style={{ color: "#28a745", display: "flex", alignItems: "center", gap: 4 }}>
-                  <Truck size={18} /> Delivered
-                </span>
-              ) : (
-                <span style={{ color: "#dc3545", display: "flex", alignItems: "center", gap: 4 }}>
-                  <XCircle size={18} /> Not Delivered
-                </span>
-              )}
+              <span style={{ color: order.isPaid ? "#28a745" : "#f0ad4e" }}>
+                {order.isPaid ? "Paid" : "Pending"}
+              </span>
             </p>
             <p style={{ marginBottom: 8 }}>
               <strong>Total Amount:</strong>{" "}
@@ -236,7 +220,8 @@ function OrderSuccessPage() {
 
         {order.paymentMethod === "qr" && !order.isPaid && (
           <p style={{ color: "#856404", marginTop: 12 }}>
-            Please scan the QR code on the payment page to complete your payment.
+            Please scan the QR code on the payment page to complete your
+            payment.
           </p>
         )}
 
