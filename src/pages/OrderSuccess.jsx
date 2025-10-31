@@ -2,6 +2,7 @@ import React, { useEffect, useState } from "react";
 import { useParams, Link } from "react-router-dom";
 import { orderAPI } from "../services/api";
 import Loader from "./Loader";
+import { CheckCircle, Clock, Truck, XCircle } from "lucide-react"; // ✅ Added icons
 
 function OrderSuccessPage() {
   const { orderId } = useParams();
@@ -15,8 +16,9 @@ function OrderSuccessPage() {
       try {
         const { data } = await orderAPI.getById(orderId);
         setOrder(data);
-        // show animation only if order exists
-        setShowAnimation(true);
+        // show animation only if just placed (check via state or param if needed)
+        setShowAnimation(sessionStorage.getItem("orderPlaced") === "true");
+        sessionStorage.removeItem("orderPlaced");
         setTimeout(() => setShowAnimation(false), 2400);
       } catch (err) {
         setError(err.response?.data?.message || "Failed to load order");
@@ -56,7 +58,7 @@ function OrderSuccessPage() {
         justifyContent: "center",
       }}
     >
-      {/* Success overlay - exactly centered in viewport */}
+      {/* ✅ Success Animation (unchanged) */}
       {showAnimation && (
         <div
           style={{
@@ -79,7 +81,6 @@ function OrderSuccessPage() {
               animation: "os-fadeIn .35s ease-out",
             }}
           >
-            {/* Circle + SVG check */}
             <div
               style={{
                 width: 120,
@@ -93,7 +94,6 @@ function OrderSuccessPage() {
                 animation: "os-pop .55s cubic-bezier(.2,.9,.2,1)",
               }}
             >
-              {/* SVG checkmark with animated stroke */}
               <svg
                 viewBox="0 0 52 52"
                 width="58"
@@ -125,7 +125,14 @@ function OrderSuccessPage() {
             </div>
 
             <div style={{ textAlign: "center" }}>
-              <h3 style={{ margin: 0, fontSize: 22, color: "#222", fontWeight: 700 }}>
+              <h3
+                style={{
+                  margin: 0,
+                  fontSize: 22,
+                  color: "#222",
+                  fontWeight: 700,
+                }}
+              >
                 Order Successful!
               </h3>
               <p style={{ margin: 0, marginTop: 6, color: "#555" }}>
@@ -136,7 +143,7 @@ function OrderSuccessPage() {
         </div>
       )}
 
-      {/* Order details card - centered and constrained for a balanced layout */}
+      {/* ✅ Order Details Card (unchanged design, added icons) */}
       <div
         style={{
           width: "100%",
@@ -147,26 +154,51 @@ function OrderSuccessPage() {
           boxShadow: "0 6px 30px rgba(16,24,40,0.06)",
         }}
       >
-        <h2 style={{ color: "#0d6efd", marginBottom: 14 }}>Order Confirmation</h2>
+        <h2 style={{ color: "#0d6efd", marginBottom: 14 }}>
+          Order Confirmation
+        </h2>
 
         <div style={{ display: "flex", gap: 24, flexWrap: "wrap" }}>
           <div style={{ flex: 1, minWidth: 280 }}>
             <p style={{ marginBottom: 8 }}>
-              <strong>Order ID:</strong> <span style={{ color: "#444" }}>{order._id}</span>
+              <strong>Order ID:</strong>{" "}
+              <span style={{ color: "#444" }}>{order._id}</span>
             </p>
             <p style={{ marginBottom: 8 }}>
               <strong>Payment Method:</strong>{" "}
-              <span style={{ color: "#444" }}>{order.paymentMethod.toUpperCase()}</span>
-            </p>
-            <p style={{ marginBottom: 8 }}>
-              <strong>Status:</strong>{" "}
-              <span style={{ color: order.isPaid ? "#28a745" : "#f0ad4e" }}>
-                {order.isPaid ? "Paid" : "Pending"}
+              <span style={{ color: "#444" }}>
+                {order.paymentMethod.toUpperCase()}
               </span>
+            </p>
+            <p style={{ marginBottom: 8, display: "flex", alignItems: "center", gap: 6 }}>
+              <strong>Status:</strong>{" "}
+              {order.isPaid ? (
+                <span style={{ color: "#28a745", display: "flex", alignItems: "center", gap: 4 }}>
+                  <CheckCircle size={18} /> Paid
+                </span>
+              ) : (
+                <span style={{ color: "#f0ad4e", display: "flex", alignItems: "center", gap: 4 }}>
+                  <Clock size={18} /> Pending
+                </span>
+              )}
+            </p>
+            <p style={{ marginBottom: 8, display: "flex", alignItems: "center", gap: 6 }}>
+              <strong>Delivery:</strong>{" "}
+              {order.isDelivered ? (
+                <span style={{ color: "#28a745", display: "flex", alignItems: "center", gap: 4 }}>
+                  <Truck size={18} /> Delivered
+                </span>
+              ) : (
+                <span style={{ color: "#dc3545", display: "flex", alignItems: "center", gap: 4 }}>
+                  <XCircle size={18} /> Not Delivered
+                </span>
+              )}
             </p>
             <p style={{ marginBottom: 8 }}>
               <strong>Total Amount:</strong>{" "}
-              <span style={{ color: "#222", fontWeight: 600 }}>₹{order.totalPrice}</span>
+              <span style={{ color: "#222", fontWeight: 600 }}>
+                ₹{order.totalPrice}
+              </span>
             </p>
           </div>
 
@@ -188,7 +220,9 @@ function OrderSuccessPage() {
                   <span style={{ color: "#333" }}>
                     {item.name} × {item.qty}
                   </span>
-                  <strong style={{ color: "#111" }}>₹{item.price * item.qty}</strong>
+                  <strong style={{ color: "#111" }}>
+                    ₹{item.price * item.qty}
+                  </strong>
                 </li>
               ))}
             </ul>

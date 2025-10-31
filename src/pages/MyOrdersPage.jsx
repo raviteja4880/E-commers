@@ -7,7 +7,6 @@ import {
   FaTimesCircle,
   FaClock,
   FaTruck,
-  FaMoneyBillWave,
 } from "react-icons/fa";
 
 function MyOrdersPage() {
@@ -117,18 +116,17 @@ function MyOrdersPage() {
           </ul>
 
           <p className="mb-1">
-            <FaMoneyBillWave className="me-2 text-success" />
             Total: <strong>₹{order.totalPrice}</strong>
           </p>
 
           <p className="mb-1">
             {order.isPaid ? (
               <span className="text-success d-flex align-items-center gap-2">
-                <FaCheckCircle /> Payment Status: Paid
+               Payment Status: Paid <FaCheckCircle /> 
               </span>
             ) : (
               <span className="text-warning d-flex align-items-center gap-2">
-                <FaClock /> Payment Status: Pending
+                Payment Status: Pending  <FaClock />
               </span>
             )}
           </p>
@@ -136,11 +134,11 @@ function MyOrdersPage() {
           <p className="mb-2">
             {order.isDelivered ? (
               <span className="text-success d-flex align-items-center gap-2">
-                <FaTruck /> Delivery Status: Delivered
+                Delivery Status: Delivered <FaTruck /> 
               </span>
             ) : (
               <span className="text-danger d-flex align-items-center gap-2">
-                <FaTimesCircle /> Delivery Status: Not Delivered
+                Delivery Status: Not Delivered  <FaTimesCircle />
               </span>
             )}
           </p>
