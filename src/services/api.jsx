@@ -6,9 +6,7 @@ const BASE_URL = process.env.REACT_APP_API_BASE || "http://localhost:5000/api";
 // ----------------- Axios instance -----------------
 const API = axios.create({
   baseURL: BASE_URL,
-  headers: {
-    "Content-Type": "application/json",
-  },
+  headers: { "Content-Type": "application/json" },
 });
 
 // ----------------- Attach JWT token automatically -----------------
@@ -16,23 +14,21 @@ API.interceptors.request.use((req) => {
   try {
     const userInfo = JSON.parse(localStorage.getItem("userInfo"));
     const token = userInfo?.token;
-    if (token) {
-      req.headers.Authorization = `Bearer ${token}`;
-    }
+    if (token) req.headers.Authorization = `Bearer ${token}`;
   } catch {
     console.warn("Invalid userInfo in localStorage");
   }
   return req;
 });
 
-// ================= Auth API =================
+// ================= AUTH API =================
 export const authAPI = {
   login: (payload) => API.post("/auth/login", payload),
   register: (payload) => API.post("/auth/register", payload),
   profile: () => API.get("/auth/profile"),
 };
 
-// ================= Products API =================
+// ================= PRODUCTS API =================
 export const productAPI = {
   getAll: () => API.get("/products"),
   getById: (id) => API.get(`/products/${id}`),
@@ -42,17 +38,16 @@ export const productAPI = {
   sync: () => API.post("/products/sync"),
 };
 
-// ================= Cart API =================
+// ================= CART API =================
 export const cartAPI = {
   get: () => API.get("/cart"),
   add: (productId, qty = 1) => API.post("/cart/add", { productId, qty }),
-  update: (productId, qty) => API.put(`/cart/${productId}`, { qty }), 
-  remove: (productId) => API.delete(`/cart/${productId}`),             
+  update: (productId, qty) => API.put(`/cart/${productId}`, { qty }),
+  remove: (productId) => API.delete(`/cart/${productId}`),
   clear: () => API.delete("/cart"),
 };
 
-
-// ================= Orders API =================
+// ================= ORDERS API =================
 export const orderAPI = {
   create: (orderData) => API.post("/orders", orderData),
   getMyOrders: () => API.get("/orders/my"),
@@ -61,12 +56,31 @@ export const orderAPI = {
   verifyPayment: (id) => API.get(`/orders/${id}/verify-payment`),
 };
 
-// ================= Payment API =================
+// ================= PAYMENT API =================
 export const paymentAPI = {
   initiate: (payload) => API.post("/payment/initiate", payload),
   verify: (orderId) => API.post(`/payment/verify/${orderId}`),
   confirm: (orderId) => API.post(`/payment/confirm/${orderId}`),
 };
 
+// ================= ADMIN API =================
+export const adminAPI = {
+  // Get all orders (with user + delivery info)
+  getAllOrders: () => API.get("/admin/orders"),
+  // Assign delivery partner to order
+  assignDelivery: (orderId, deliveryPartnerId) =>
+    API.put(`/admin/orders/${orderId}/assign`, { deliveryPartnerId }),
+  // Manage delivery partners
+  getDeliveryPartners: () => API.get("/admin/delivery"),
+  addDeliveryPartner: (payload) => API.post("/admin/delivery", payload),
+};
+
+// ================= DELIVERY API =================
+export const deliveryAPI = {
+  // Get all orders assigned to the delivery partner
+  getMyOrders: () => API.get("/delivery/my-orders"),
+  // Mark specific order as delivered
+  markDelivered: (orderId) => API.put(`/delivery/order/${orderId}/deliver`),
+};
 
 export { API };

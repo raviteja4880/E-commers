@@ -10,7 +10,6 @@ import Navbar from "./pages/Navbar";
 import Home from "./pages/Home";
 import Cart from "./pages/Cart";
 import Login from "./pages/Login";
-import Register from "./pages/Register";
 import CheckoutPage from "./pages/CheckoutPage";
 import OrderSuccess from "./pages/OrderSuccess";
 import { CartProvider } from "./context/CartContext";
@@ -48,7 +47,6 @@ function App() {
             <Route path="/cart" element={<Cart />} />
             <Route path="/order-success/:orderId" element={<OrderSuccess />} />
             <Route path="/login" element={<Login />} />
-            <Route path="/register" element={<Register />} />
             <Route path="/my-orders" element={<MyOrdersPage />} />
             <Route path="/product/:id" element={<ProductDetails />} />
             <Route path="/payment/:orderId" element={<PaymentPage />} />

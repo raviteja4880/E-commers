@@ -1,70 +1,90 @@
-# Getting Started with Create React App
+# E-Commerce Website — Full-Stack MERN Application
 
-This project was bootstrapped with [Create React App](https://github.com/facebook/create-react-app).
+A secure and fully responsive e-commerce platform featuring modern UI, real-time cart updates, and integrated payment options.  
+Built with the **MERN stack**, this application provides a smooth online shopping experience with advanced order management and secure authentication.
 
-## Available Scripts
+---
 
-In the project directory, you can run:
+## Tech Stack
 
-### `npm start`
+- **Frontend:** React.js  
+- **Backend:** Node.js, Express.js  
+- **Database:** MongoDB Atlas  
 
-Runs the app in the development mode.\
-Open [http://localhost:3000](http://localhost:3000) to view it in your browser.
+---
 
-The page will reload when you make changes.\
-You may also see any lint errors in the console.
+## Key Features
 
-### `npm test`
+### Secure Authentication
+- Role-based access using **JWT authentication**.  
+- Protected routes for users and admins.
 
-Launches the test runner in the interactive watch mode.\
-See the section about [running tests](https://facebook.github.io/create-react-app/docs/running-tests) for more information.
+### Product & Cart Management
+- Browse products, view detailed pages, and add items to the cart.  
+- Real-time cart updates with smooth transitions and toast notifications.  
+- Persistent cart state managed through backend APIs.
 
-### `npm run build`
+### Payment Integration
+- Supports multiple payment methods:  
+  - **QR Code payments**  
+  - **Cash on Delivery (COD)**  
+  - **Card payments**  
+- Integrated and tested for seamless checkout flow.
 
-Builds the app for production to the `build` folder.\
-It correctly bundles React in production mode and optimizes the build for the best performance.
+### Order Management
+- Users can view **order history** and **order status updates**.  
+- Admins can manage products, update stock, and monitor order statuses.
 
-The build is minified and the filenames include the hashes.\
-Your app is ready to be deployed!
+### UI & Experience
+- Modern, responsive interface with **Framer Motion** animations.  
+- Toast alerts for instant feedback.  
+- Fast, fluid user interactions with focus on accessibility and design consistency.
 
-See the section about [deployment](https://facebook.github.io/create-react-app/docs/deployment) for more information.
+---
 
-### `npm run eject`
+## Learning Highlights
 
-**Note: this is a one-way operation. Once you `eject`, you can't go back!**
+Developing this e-commerce platform strengthened my expertise in:
+- Full-stack architecture design using **MERN**.  
+- RESTful API development and integration.  
+- Secure authentication with JWT tokens.  
+- Payment gateway integration and transaction flow.  
+- UI/UX best practices for responsive, dynamic web apps.
 
-If you aren't satisfied with the build tool and configuration choices, you can `eject` at any time. This command will remove the single build dependency from your project.
+---
 
-Instead, it will copy all the configuration files and the transitive dependencies (webpack, Babel, ESLint, etc) right into your project so you have full control over them. All of the commands except `eject` will still work, but they will point to the copied scripts so you can tweak them. At this point you're on your own.
+## About the Project
 
-You don't have to ever use `eject`. The curated feature set is suitable for small and middle deployments, and you shouldn't feel obligated to use this feature. However we understand that this tool wouldn't be useful if you couldn't customize it when you are ready for it.
+This project emphasizes both **functionality and scalability**:  
+- Clean, modular code organization for easy maintenance.  
+- Reusable UI components and dynamic routing.  
+- Emphasis on performance optimization and secure data handling.
 
-## Learn More
+---
 
-You can learn more in the [Create React App documentation](https://facebook.github.io/create-react-app/docs/getting-started).
+## Future Enhancements
 
-To learn React, check out the [React documentation](https://reactjs.org/).
+- Implement product recommendations using AI/ML.  
+- Add wishlist and review system.  
+- Introduce inventory analytics and sales dashboard.  
+- Integrate international payment options.
 
-### Code Splitting
+---
 
-This section has moved here: [https://facebook.github.io/create-react-app/docs/code-splitting](https://facebook.github.io/create-react-app/docs/code-splitting)
+## Installation & Setup
 
-### Analyzing the Bundle Size
+```bash
+# Clone the repository
+git clone https://github.com/raviteja4880/E-commerce.git
 
-This section has moved here: [https://facebook.github.io/create-react-app/docs/analyzing-the-bundle-size](https://facebook.github.io/create-react-app/docs/analyzing-the-bundle-size)
+# Navigate to the project folder
+cd ecommerce-main
 
-### Making a Progressive Web App
+# Install dependencies
+npm install
 
-This section has moved here: [https://facebook.github.io/create-react-app/docs/making-a-progressive-web-app](https://facebook.github.io/create-react-app/docs/making-a-progressive-web-app)
+# Run the backend
+npm run server
 
-### Advanced Configuration
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/advanced-configuration](https://facebook.github.io/create-react-app/docs/advanced-configuration)
-
-### Deployment
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/deployment](https://facebook.github.io/create-react-app/docs/deployment)
-
-### `npm run build` fails to minify
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/troubleshooting#npm-run-build-fails-to-minify](https://facebook.github.io/create-react-app/docs/troubleshooting#npm-run-build-fails-to-minify)
+# Run the frontend
+npm start
