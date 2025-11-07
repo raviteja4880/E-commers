@@ -2,6 +2,7 @@ import React, { useState } from "react";
 import { useCart } from "../context/CartContext";
 import { orderAPI } from "../services/api";
 import { useNavigate } from "react-router-dom";
+import { toast } from "react-toastify";
 
 function CheckoutPage() {
   const { state, clearCart } = useCart();
@@ -9,19 +10,54 @@ function CheckoutPage() {
   const navigate = useNavigate();
 
   const [address, setAddress] = useState("");
+  const [mobile, setMobile] = useState("");
   const [paymentMethod, setPaymentMethod] = useState("COD");
   const [loading, setLoading] = useState(false);
-  const [error, setError] = useState("");
 
   const totalPrice = cartItems.reduce(
     (acc, item) => acc + item.qty * (item.product?.price || 0),
     0
   );
 
+  // Detect location and autofill address
+  const handleUseLocation = async () => {
+    if (!navigator.geolocation) {
+      toast.error("Geolocation is not supported in this browser.");
+      return;
+    }
+
+    navigator.geolocation.getCurrentPosition(
+      async (position) => {
+        const { latitude, longitude } = position.coords;
+        try {
+          const res = await fetch(
+            `https://nominatim.openstreetmap.org/reverse?format=json&lat=${latitude}&lon=${longitude}`
+          );
+          const data = await res.json();
+          if (data?.display_name) {
+            setAddress(data.display_name);
+            toast.success("Location detected successfully!");
+          } else {
+            toast.warning("Unable to fetch address. Try again manually.");
+          }
+        } catch {
+          toast.error("Failed to get address. Try again.");
+        }
+      },
+      () => {
+        toast.error("Location access denied.");
+      }
+    );
+  };
+
+  // Place Order
   const handlePlaceOrder = async () => {
-    if (!address.trim()) return setError("Shipping address is required");
+    if (!address.trim()) return toast.error("Shipping address is required!");
+    if (!mobile.trim()) return toast.error("Mobile number is required!");
+    if (!/^[6-9]\d{9}$/.test(mobile))
+      return toast.error("Enter a valid 10-digit mobile number.");
+
     setLoading(true);
-    setError("");
 
     try {
       const payload = {
@@ -34,20 +70,21 @@ function CheckoutPage() {
         })),
         shippingAddress: address,
         paymentMethod,
+        mobile,
       };
 
       const { data } = await orderAPI.create(payload);
 
       if (paymentMethod === "qr" || paymentMethod === "card") {
-        // Navigate to payment page, cart remains until payment confirmed
         navigate(`/payment/${data._id}`);
-      } else if (paymentMethod === "COD") {
-        // For COD, order is considered paid on confirmation
+      } else {
         navigate(`/order-success/${data._id}`);
         clearCart();
       }
+
+      toast.success("Order placed successfully!");
     } catch (err) {
-      setError(err.response?.data?.message || "Order failed");
+      toast.error(err.response?.data?.message || "Order failed");
     } finally {
       setLoading(false);
     }
@@ -59,24 +96,50 @@ function CheckoutPage() {
 
   return (
     <div className="container mt-4">
-      <h2 className="mb-4">Checkout</h2>
-      {error && <div className="alert alert-danger">{error}</div>}
+      <h2 className="mb-4 fw-bold text-primary">Checkout</h2>
 
-      {/* Shipping Address */}
+      {/* Address Section */}
       <div className="mb-3">
-        <label htmlFor="address">Shipping Address</label>
+        <label htmlFor="address" className="form-label fw-semibold">
+          Shipping Address <span className="text-danger">*</span>
+        </label>
         <textarea
           id="address"
           className="form-control"
+          rows="3"
           value={address}
           onChange={(e) => setAddress(e.target.value)}
-          placeholder="Enter your shipping address"
+          placeholder="Enter your full address"
+        ></textarea>
+        <button
+          onClick={handleUseLocation}
+          className="btn btn-outline-secondary mt-2"
+        >
+          Use My Current Location
+        </button>
+      </div>
+
+      {/* Mobile Number */}
+      <div className="mb-3">
+        <label htmlFor="mobile" className="form-label fw-semibold">
+          Mobile Number <span className="text-danger">*</span>
+        </label>
+        <input
+          id="mobile"
+          type="text"
+          className="form-control"
+          maxLength="10"
+          placeholder="Enter your 10-digit mobile number"
+          value={mobile}
+          onChange={(e) => setMobile(e.target.value)}
         />
       </div>
 
       {/* Payment Method */}
       <div className="mb-3">
-        <label htmlFor="paymentMethod">Payment Method</label>
+        <label htmlFor="paymentMethod" className="form-label fw-semibold">
+          Payment Method
+        </label>
         <select
           id="paymentMethod"
           className="form-select"
@@ -90,7 +153,7 @@ function CheckoutPage() {
       </div>
 
       {/* Order Summary */}
-      <h4>Order Summary</h4>
+      <h5 className="fw-bold mt-4">Order Summary</h5>
       <ul className="list-group mb-3">
         {cartItems.map((item) => (
           <li
@@ -101,7 +164,7 @@ function CheckoutPage() {
             <span>₹{item.qty * item.product?.price}</span>
           </li>
         ))}
-        <li className="list-group-item d-flex justify-content-between">
+        <li className="list-group-item d-flex justify-content-between bg-light">
           <strong>Total</strong>
           <strong>₹{totalPrice}</strong>
         </li>
@@ -112,7 +175,7 @@ function CheckoutPage() {
         onClick={handlePlaceOrder}
         disabled={loading}
       >
-        {loading ? "Placing Order..." : "Proceed to Payment"}
+        {loading ? "Placing Order..." : "Confirm & Place Order"}
       </button>
     </div>
   );

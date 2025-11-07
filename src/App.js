@@ -15,7 +15,9 @@ import OrderSuccess from "./pages/OrderSuccess";
 import { CartProvider } from "./context/CartContext";
 import ProductDetails from "./pages/ProductDetails";
 import PaymentPage from "./pages/PaymentPage";
+import ProfilePage from "./pages/ProfilePage";
 import MyOrdersPage from "./pages/MyOrdersPage";
+
 import { ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 
@@ -46,6 +48,7 @@ function App() {
             <Route path="/" element={<Home />} />
             <Route path="/cart" element={<Cart />} />
             <Route path="/order-success/:orderId" element={<OrderSuccess />} />
+            <Route path="/profile" element={<ProfilePage />} />
             <Route path="/login" element={<Login />} />
             <Route path="/my-orders" element={<MyOrdersPage />} />
             <Route path="/product/:id" element={<ProductDetails />} />

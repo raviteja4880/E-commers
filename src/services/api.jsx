@@ -25,7 +25,8 @@ API.interceptors.request.use((req) => {
 export const authAPI = {
   login: (payload) => API.post("/auth/login", payload),
   register: (payload) => API.post("/auth/register", payload),
-  profile: () => API.get("/auth/profile"),
+  getProfile: () => API.get("/auth/profile"),
+  updateProfile: (data) => API.put("/auth/profile", data),
 };
 
 // ================= PRODUCTS API =================
@@ -65,22 +66,17 @@ export const paymentAPI = {
 
 // ================= ADMIN API =================
 export const adminAPI = {
-  // Get all orders (with user + delivery info)
   getAllOrders: () => API.get("/admin/orders"),
-  // Assign delivery partner to order
   assignDelivery: (orderId, deliveryPartnerId) =>
     API.put(`/admin/orders/${orderId}/assign`, { deliveryPartnerId }),
-  // Manage delivery partners
   getDeliveryPartners: () => API.get("/admin/delivery"),
   addDeliveryPartner: (payload) => API.post("/admin/delivery", payload),
 };
 
 // ================= DELIVERY API =================
 export const deliveryAPI = {
-  // Get all orders assigned to the delivery partner
   getMyOrders: () => API.get("/delivery/my-orders"),
-  // Mark specific order as delivered
-  markDelivered: (orderId) => API.put(`/delivery/order/${orderId}/deliver`),
+  markDelivered: (orderId) => API.put(`/delivery/${orderId}/deliver`),
 };
 
 export { API };

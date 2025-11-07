@@ -7,6 +7,7 @@ import {
   FaBoxOpen,
   FaSignOutAlt,
   FaHome,
+  FaEdit,
 } from "react-icons/fa";
 
 function Navbar() {
@@ -17,14 +18,15 @@ function Navbar() {
     state.cartItems?.reduce((acc, item) => acc + item.qty, 0) || 0;
 
   const [dropdownOpen, setDropdownOpen] = useState(false);
-  const dropdownRef = useRef(null); // 🔹 ref for dropdown container
+  const dropdownRef = useRef(null);
 
   const handleLogout = () => {
     localStorage.removeItem("userInfo");
+    localStorage.removeItem("token");
     navigate("/login");
   };
 
-  // 🔹 Close dropdown when clicking outside
+  // Close dropdown when clicking outside
   useEffect(() => {
     const handleClickOutside = (event) => {
       if (dropdownRef.current && !dropdownRef.current.contains(event.target)) {
@@ -32,7 +34,6 @@ function Navbar() {
       }
     };
     document.addEventListener("mousedown", handleClickOutside);
-
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
 
@@ -155,6 +156,31 @@ function Navbar() {
 
                       <li>
                         <hr className="dropdown-divider my-2" />
+                      </li>
+
+                      {/* ✅ Edit Profile */}
+                      <li>
+                        <button
+                          className="dropdown-item d-flex align-items-center gap-2 fw-semibold text-primary"
+                          style={{
+                            padding: "0.7rem 1rem",
+                            borderRadius: "8px",
+                            transition: "all 0.2s ease-in-out",
+                          }}
+                          onClick={() => {
+                            setDropdownOpen(false);
+                            navigate("/profile");
+                          }}
+                          onMouseOver={(e) =>
+                            (e.currentTarget.style.background = "#f0f8ff")
+                          }
+                          onMouseOut={(e) =>
+                            (e.currentTarget.style.background = "transparent")
+                          }
+                        >
+                          <FaEdit size={16} />
+                          Edit Profile
+                        </button>
                       </li>
 
                       {/* Logout */}
