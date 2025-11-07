@@ -7,6 +7,9 @@ import {
   FaTimesCircle,
   FaClock,
   FaTruck,
+  FaMoneyBillWave,
+  FaQrcode,
+  FaCreditCard,
 } from "react-icons/fa";
 
 function MyOrdersPage() {
@@ -122,11 +125,11 @@ function MyOrdersPage() {
           <p className="mb-1">
             {order.isPaid ? (
               <span className="text-success d-flex align-items-center gap-2">
-               Payment Status: Paid <FaCheckCircle /> 
+                Payment Status: Paid <FaCheckCircle />
               </span>
             ) : (
               <span className="text-warning d-flex align-items-center gap-2">
-                Payment Status: Pending  <FaClock />
+                Payment Status: Pending <FaClock />
               </span>
             )}
           </p>
@@ -134,36 +137,114 @@ function MyOrdersPage() {
           <p className="mb-2">
             {order.isDelivered ? (
               <span className="text-success d-flex align-items-center gap-2">
-                Delivery Status: Delivered <FaTruck /> 
+                Delivery Status: Delivered <FaTruck />
               </span>
             ) : (
               <span className="text-danger d-flex align-items-center gap-2">
-                Delivery Status: Not Delivered  <FaTimesCircle />
+                Delivery Status: Not Delivered <FaTimesCircle />
               </span>
             )}
           </p>
 
-          <div className="d-flex gap-2 mt-2">
+          {/* Payment Options for Pending Orders */}
+          {!order.isPaid && (
+            <div className="d-flex align-items-center gap-2">
+              {/* Show single "Pay Now" button for QR/Card orders */}
+              {(order.paymentMethod === "qr" ||
+                order.paymentMethod === "card") && (
+                <button
+                  className="btn btn-sm btn-success d-flex align-items-center gap-1"
+                  onClick={() =>
+                    navigate(`/payment/${order._id}?method=${order.paymentMethod}`)
+                  }
+                >
+                  Pay Now
+                </button>
+              )}
+
+              {/* COD: Dropdown that acts as button */}
+              {order.paymentMethod === "COD" && (
+                <CODDropdown orderId={order._id} />
+              )}
+            </div>
+          )}
+
+          <div className="d-flex gap-2 mt-3">
             <Link
               to={`/order-success/${order._id}`}
-              className="btn btn-sm btn-primary"
+              className="btn btn-sm btn-outline-primary"
             >
               View Details
             </Link>
-
-            {!order.isPaid && order.paymentMethod === "qr" && (
-              <button
-                className="btn btn-sm btn-success"
-                onClick={() => navigate(`/payment/${order._id}`)}
-              >
-                Pay Now
-              </button>
-            )}
           </div>
         </div>
       ))}
     </div>
   );
 }
+
+// COD Dropdown Component (self-contained)
+const CODDropdown = ({ orderId }) => {
+  const [open, setOpen] = useState(false);
+  const dropdownRef = useRef(null);
+  const navigate = useNavigate();
+
+  // Close dropdown on outside click
+  useEffect(() => {
+    const handleClickOutside = (e) => {
+      if (dropdownRef.current && !dropdownRef.current.contains(e.target)) {
+        setOpen(false);
+      }
+    };
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
+
+  return (
+    <div className="position-relative" ref={dropdownRef}>
+      <button
+        className="btn btn-sm btn-success d-flex align-items-center gap-2"
+        onClick={() => setOpen(!open)}
+      >
+        Pay Now
+      </button>
+
+      {open && (
+        <ul
+          className="dropdown-menu show shadow mt-1"
+          style={{
+            position: "absolute",
+            zIndex: 1050,
+            display: "block",
+            minWidth: "200px",
+          }}
+        >
+          <li>
+            <button
+              className="dropdown-item d-flex align-items-center gap-2"
+              onClick={() => {
+                navigate(`/payment/${orderId}?method=qr`);
+                setOpen(false);
+              }}
+            >
+              <FaQrcode /> Pay via QR Code
+            </button>
+          </li>
+          <li>
+            <button
+              className="dropdown-item d-flex align-items-center gap-2"
+              onClick={() => {
+                navigate(`/payment/${orderId}?method=card`);
+                setOpen(false);
+              }}
+            >
+              <FaCreditCard /> Pay via Debit Card
+            </button>
+          </li>
+        </ul>
+      )}
+    </div>
+  );
+};
 
 export default MyOrdersPage;

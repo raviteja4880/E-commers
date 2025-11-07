@@ -3,6 +3,7 @@ import { useCart } from "../context/CartContext";
 import { orderAPI } from "../services/api";
 import { useNavigate } from "react-router-dom";
 import { toast } from "react-toastify";
+import { IndianRupee, MapPin, Smartphone, CreditCard, Home } from "lucide-react";
 
 function CheckoutPage() {
   const { state, clearCart } = useCart();
@@ -75,8 +76,9 @@ function CheckoutPage() {
 
       const { data } = await orderAPI.create(payload);
 
+      // Pass selected payment method via query params
       if (paymentMethod === "qr" || paymentMethod === "card") {
-        navigate(`/payment/${data._id}`);
+        navigate(`/payment/${data._id}?method=${paymentMethod}`);
       } else {
         navigate(`/order-success/${data._id}`);
         clearCart();
@@ -96,12 +98,15 @@ function CheckoutPage() {
 
   return (
     <div className="container mt-4">
-      <h2 className="mb-4 fw-bold text-primary">Checkout</h2>
+      <h2 className="mb-4 fw-bold text-primary d-flex align-items-center gap-2">
+        <CreditCard size={24} />
+        Checkout
+      </h2>
 
       {/* Address Section */}
       <div className="mb-3">
-        <label htmlFor="address" className="form-label fw-semibold">
-          Shipping Address <span className="text-danger">*</span>
+        <label htmlFor="address" className="form-label fw-semibold d-flex align-items-center gap-1">
+          <Home size={18} /> Shipping Address <span className="text-danger">*</span>
         </label>
         <textarea
           id="address"
@@ -113,16 +118,17 @@ function CheckoutPage() {
         ></textarea>
         <button
           onClick={handleUseLocation}
-          className="btn btn-outline-secondary mt-2"
+          className="btn btn-outline-secondary mt-2 d-flex align-items-center gap-2"
         >
+          <MapPin size={16} />
           Use My Current Location
         </button>
       </div>
 
       {/* Mobile Number */}
       <div className="mb-3">
-        <label htmlFor="mobile" className="form-label fw-semibold">
-          Mobile Number <span className="text-danger">*</span>
+        <label htmlFor="mobile" className="form-label fw-semibold d-flex align-items-center gap-1">
+          <Smartphone size={18} /> Mobile Number <span className="text-danger">*</span>
         </label>
         <input
           id="mobile"
@@ -137,8 +143,8 @@ function CheckoutPage() {
 
       {/* Payment Method */}
       <div className="mb-3">
-        <label htmlFor="paymentMethod" className="form-label fw-semibold">
-          Payment Method
+        <label htmlFor="paymentMethod" className="form-label fw-semibold d-flex align-items-center gap-1">
+          <CreditCard size={18} /> Payment Method
         </label>
         <select
           id="paymentMethod"
@@ -157,21 +163,28 @@ function CheckoutPage() {
       <ul className="list-group mb-3">
         {cartItems.map((item) => (
           <li
-            className="list-group-item d-flex justify-content-between"
+            className="list-group-item d-flex justify-content-between align-items-center"
             key={item._id}
           >
-            {item.product?.name} x {item.qty}
-            <span>₹{item.qty * item.product?.price}</span>
+            <span>
+              {item.product?.name} x {item.qty}
+            </span>
+            <span className="d-flex align-items-center gap-1">
+              <IndianRupee size={14} />
+              {item.qty * item.product?.price}
+            </span>
           </li>
         ))}
-        <li className="list-group-item d-flex justify-content-between bg-light">
-          <strong>Total</strong>
-          <strong>₹{totalPrice}</strong>
+        <li className="list-group-item d-flex justify-content-between bg-light fw-semibold">
+          <span>Total</span>
+          <span className="d-flex align-items-center gap-1">
+            <IndianRupee size={16} /> {totalPrice}
+          </span>
         </li>
       </ul>
 
       <button
-        className="btn btn-success w-100"
+        className="btn btn-success w-100 d-flex justify-content-center align-items-center gap-2"
         onClick={handlePlaceOrder}
         disabled={loading}
       >

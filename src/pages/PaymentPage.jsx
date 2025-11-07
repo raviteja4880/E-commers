@@ -1,5 +1,5 @@
 import React, { useEffect, useState, useRef } from "react";
-import { useParams, useNavigate } from "react-router-dom";
+import { useParams, useNavigate, useSearchParams } from "react-router-dom";
 import { orderAPI, paymentAPI } from "../services/api";
 import { useCart } from "../context/CartContext";
 import { ToastContainer, toast } from "react-toastify";
@@ -8,6 +8,9 @@ import Loader from "./Loader";
 
 function PaymentPage() {
   const { orderId } = useParams();
+  const [searchParams] = useSearchParams();
+  const initialMethod = searchParams.get("method") || "qr";
+
   const navigate = useNavigate();
   const { clearCart } = useCart();
 
@@ -15,7 +18,7 @@ function PaymentPage() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [qrCode, setQrCode] = useState(null);
-  const [method, setMethod] = useState("qr");
+  const [method, setMethod] = useState(initialMethod);
   const [paymentId, setPaymentId] = useState(null);
   const [cardDetails, setCardDetails] = useState({
     number: "",
@@ -25,6 +28,7 @@ function PaymentPage() {
   const [cardErrors, setCardErrors] = useState({});
   const pollingRef = useRef(null);
 
+  // Fetch order
   useEffect(() => {
     const fetchOrder = async () => {
       try {
@@ -35,75 +39,30 @@ function PaymentPage() {
       }
     };
     fetchOrder();
-
-    return () => {
-      if (pollingRef.current) clearInterval(pollingRef.current);
-    };
+    return () => pollingRef.current && clearInterval(pollingRef.current);
   }, [orderId]);
 
+  // Auto-initiate for QR
   useEffect(() => {
     if (method === "qr" && order) handleInitiatePayment();
   }, [method, order]);
 
-  const formatCardNumber = (value) => {
-    const digits = value.replace(/\D/g, "").slice(0, 16);
-    return digits.replace(/(.{4})/g, "$1 ").trim();
-  };
-
-  const luhnCheck = (num) => {
-    const digits = num.replace(/\D/g, "");
-    let sum = 0;
-    let shouldDouble = false;
-    for (let i = digits.length - 1; i >= 0; i--) {
-      let d = parseInt(digits.charAt(i), 10);
-      if (shouldDouble) {
-        d *= 2;
-        if (d > 9) d -= 9;
-      }
-      sum += d;
-      shouldDouble = !shouldDouble;
-    }
-    return sum % 10 === 0;
-  };
-
-  const validateExpiry = (value) => {
-    if (!/^\d{2}\/\d{2}$/.test(value)) return false;
-    const [mmStr, yyStr] = value.split("/");
-    const mm = parseInt(mmStr, 10);
-    const yy = parseInt(yyStr, 10);
-    if (mm < 1 || mm > 12) return false;
-    const fullYear = 2000 + yy;
-    const expiryDate = new Date(fullYear, mm, 0, 23, 59, 59);
-    return expiryDate >= new Date();
-  };
-
-  const validateCvv = (cvv) => /^\d{3,4}$/.test(cvv);
-
+  // ====== CARD VALIDATION ======
   const validateCardDetails = () => {
     const errors = {};
-    const digitsOnly = cardDetails.number.replace(/\D/g, "");
-
-    if (digitsOnly.length !== 16) {
-      errors.number = "Card number must be 16 digits.";
-    } else if (!luhnCheck(digitsOnly)) {
-      errors.number = "Invalid card number.";
-    }
-
-    if (!validateExpiry(cardDetails.expiry)) {
-      errors.expiry = "Invalid or expired date.";
-    }
-
-    if (!validateCvv(cardDetails.cvv)) {
+    const digits = cardDetails.number.replace(/\D/g, "");
+    if (digits.length !== 16) errors.number = "Card number must be 16 digits.";
+    if (!/^\d{2}\/\d{2}$/.test(cardDetails.expiry))
+      errors.expiry = "Invalid expiry format (MM/YY).";
+    if (!/^\d{3,4}$/.test(cardDetails.cvv))
       errors.cvv = "CVV must be 3–4 digits.";
-    }
-
     setCardErrors(errors);
     return Object.keys(errors).length === 0;
   };
 
+  // ====== INITIATE PAYMENT ======
   const handleInitiatePayment = async () => {
     setLoading(true);
-    setError("");
     try {
       const payload = {
         orderId,
@@ -111,7 +70,6 @@ function PaymentPage() {
         method,
         ...(method === "card" ? { cardDetails } : {}),
       };
-
       const { data } = await paymentAPI.initiate(payload);
       setPaymentId(data.paymentId);
 
@@ -121,33 +79,32 @@ function PaymentPage() {
         startPolling();
       }
     } catch (err) {
-      setError(err.response?.data?.message || "Payment initiation failed");
       toast.error("Payment initiation failed");
+      setError(err.response?.data?.message || "Failed to initiate payment");
     } finally {
       setLoading(false);
     }
   };
 
+  // ====== CONFIRM PAYMENT ======
   const handleConfirmPayment = async () => {
     if (method === "card" && !validateCardDetails()) return;
     setLoading(true);
     try {
-      if (method === "qr" || method === "card") {
-        await paymentAPI.confirm(orderId);
-      }
-      await orderAPI.pay(orderId, { method, status: "paid" });
+      // Confirm payment in backend
+      await paymentAPI.confirm(orderId);
       toast.success("Payment successful!");
       clearCart();
-      setTimeout(() => navigate(`/order-success/${orderId}`), 1500);
+      setTimeout(() => navigate(`/order-success/${orderId}`), 1200);
     } catch (err) {
-      toast.error(err.response?.data?.message || "Payment confirmation failed");
+      toast.error("Payment confirmation failed");
     } finally {
       setLoading(false);
     }
   };
 
+  // ====== POLLING (QR) ======
   const startPolling = () => {
-    if (pollingRef.current) clearInterval(pollingRef.current);
     pollingRef.current = setInterval(async () => {
       try {
         const { data } = await paymentAPI.verify(orderId);
@@ -173,22 +130,12 @@ function PaymentPage() {
 
       {error && <div className="alert alert-danger">{error}</div>}
 
-      <div className="mb-3">
-        <label className="form-label">Choose Payment Method:</label>
-        <select
-          className="form-select"
-          value={method}
-          onChange={(e) => {
-            setMethod(e.target.value);
-            setQrCode(null);
-          }}
-        >
-          <option value="qr">Pay via QR Code</option>
-          <option value="card">Pay via Debit Card</option>
-          <option value="cod">Cash on Delivery</option>
-        </select>
+      {/* SHOW SELECTED METHOD (readonly) */}
+      <div className="alert alert-secondary d-flex align-items-center gap-2">
+        <strong>Payment Method:</strong> {method.toUpperCase()}
       </div>
 
+      {/* QR PAYMENT */}
       {method === "qr" && qrCode && (
         <div className="text-center">
           <img src={qrCode} alt="QR Code" style={{ width: 220, height: 220 }} />
@@ -205,6 +152,7 @@ function PaymentPage() {
         </div>
       )}
 
+      {/* CARD PAYMENT */}
       {method === "card" && (
         <div className="card p-3 shadow-sm">
           <label className="form-label">Card Number</label>
@@ -258,7 +206,10 @@ function PaymentPage() {
 
           <button
             className="btn btn-success w-100 mt-2"
-            onClick={handleConfirmPayment}
+            onClick={() => {
+              handleInitiatePayment();
+              setTimeout(() => handleConfirmPayment(), 1000);
+            }}
             disabled={loading}
           >
             {loading ? "Processing..." : "Pay Now"}
@@ -266,27 +217,10 @@ function PaymentPage() {
         </div>
       )}
 
+      {/* COD PAYMENT */}
       {method === "cod" && (
-        <div className="text-center mt-3">
-          <button
-            className="btn btn-primary"
-            disabled={loading}
-            onClick={async () => {
-              try {
-                setLoading(true);
-                await orderAPI.pay(orderId, { method: "COD", status: "paid" });
-                toast.success("COD order confirmed!");
-                clearCart();
-                setTimeout(() => navigate(`/order-success/${orderId}`), 1200);
-              } catch (err) {
-                toast.error("Failed to confirm COD order.");
-              } finally {
-                setLoading(false);
-              }
-            }}
-          >
-            {loading ? "Confirming..." : "Confirm COD Order"}
-          </button>
+        <div className="alert alert-info mt-3 text-center">
+          <strong>Cash on Delivery:</strong> Please pay the amount to the delivery partner when you receive your order.
         </div>
       )}
     </div>
