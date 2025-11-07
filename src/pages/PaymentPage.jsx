@@ -23,10 +23,8 @@ function PaymentPage() {
     cvv: "",
   });
   const [cardErrors, setCardErrors] = useState({});
-
   const pollingRef = useRef(null);
 
-  // ✅ Fetch order details
   useEffect(() => {
     const fetchOrder = async () => {
       try {
@@ -43,12 +41,10 @@ function PaymentPage() {
     };
   }, [orderId]);
 
-  // ✅ Auto-initiate QR payment
   useEffect(() => {
     if (method === "qr" && order) handleInitiatePayment();
   }, [method, order]);
 
-  // -------------------- CARD VALIDATION HELPERS -------------------- //
   const formatCardNumber = (value) => {
     const digits = value.replace(/\D/g, "").slice(0, 16);
     return digits.replace(/(.{4})/g, "$1 ").trim();
@@ -105,26 +101,6 @@ function PaymentPage() {
     return Object.keys(errors).length === 0;
   };
 
-  const onCardNumberChange = (e) => {
-    const formatted = formatCardNumber(e.target.value);
-    setCardDetails((s) => ({ ...s, number: formatted }));
-    setCardErrors((s) => ({ ...s, number: undefined }));
-  };
-
-  const onExpiryChange = (e) => {
-    let val = e.target.value.replace(/[^\d]/g, "").slice(0, 4);
-    if (val.length >= 3) val = `${val.slice(0, 2)}/${val.slice(2)}`;
-    setCardDetails((s) => ({ ...s, expiry: val }));
-    setCardErrors((s) => ({ ...s, expiry: undefined }));
-  };
-
-  const onCvvChange = (e) => {
-    const digits = e.target.value.replace(/\D/g, "").slice(0, 4);
-    setCardDetails((s) => ({ ...s, cvv: digits }));
-    setCardErrors((s) => ({ ...s, cvv: undefined }));
-  };
-
-  // -------------------- PAYMENT HANDLERS -------------------- //
   const handleInitiatePayment = async () => {
     setLoading(true);
     setError("");
@@ -154,23 +130,17 @@ function PaymentPage() {
 
   const handleConfirmPayment = async () => {
     if (method === "card" && !validateCardDetails()) return;
-
-    if (!paymentId && method !== "cod") {
-      toast.error("Please initiate the payment first.");
-      return;
-    }
-
     setLoading(true);
     try {
-      await paymentAPI.confirm(orderId);
-      toast.success("Payment confirmed successfully!");
+      if (method === "qr" || method === "card") {
+        await paymentAPI.confirm(orderId);
+      }
+      await orderAPI.pay(orderId, { method, status: "paid" });
+      toast.success("Payment successful!");
       clearCart();
-
-      if (pollingRef.current) clearInterval(pollingRef.current);
       setTimeout(() => navigate(`/order-success/${orderId}`), 1500);
     } catch (err) {
-      toast.error("Payment confirmation failed");
-      setError(err.response?.data?.message || "Payment confirmation failed");
+      toast.error(err.response?.data?.message || "Payment confirmation failed");
     } finally {
       setLoading(false);
     }
@@ -195,7 +165,6 @@ function PaymentPage() {
 
   if (!order) return <Loader />;
 
-  // -------------------- UI -------------------- //
   return (
     <div className="container mt-4">
       <ToastContainer position="top-right" autoClose={2000} />
@@ -204,7 +173,6 @@ function PaymentPage() {
 
       {error && <div className="alert alert-danger">{error}</div>}
 
-      {/* Payment method selector */}
       <div className="mb-3">
         <label className="form-label">Choose Payment Method:</label>
         <select
@@ -221,7 +189,6 @@ function PaymentPage() {
         </select>
       </div>
 
-      {/* QR Payment */}
       {method === "qr" && qrCode && (
         <div className="text-center">
           <img src={qrCode} alt="QR Code" style={{ width: 220, height: 220 }} />
@@ -238,18 +205,18 @@ function PaymentPage() {
         </div>
       )}
 
-      {/* Card Payment */}
       {method === "card" && (
         <div className="card p-3 shadow-sm">
           <label className="form-label">Card Number</label>
           <input
             type="text"
             inputMode="numeric"
-            autoComplete="cc-number"
             className={`form-control mb-2 ${cardErrors.number ? "is-invalid" : ""}`}
             placeholder="1234 5678 9012 3456"
             value={cardDetails.number}
-            onChange={onCardNumberChange}
+            onChange={(e) =>
+              setCardDetails({ ...cardDetails, number: e.target.value })
+            }
           />
           {cardErrors.number && (
             <div className="invalid-feedback">{cardErrors.number}</div>
@@ -260,13 +227,12 @@ function PaymentPage() {
               <label className="form-label">Expiry (MM/YY)</label>
               <input
                 type="text"
-                inputMode="numeric"
-                autoComplete="cc-exp"
                 className={`form-control mb-2 ${cardErrors.expiry ? "is-invalid" : ""}`}
                 placeholder="MM/YY"
                 value={cardDetails.expiry}
-                onChange={onExpiryChange}
-                maxLength={5}
+                onChange={(e) =>
+                  setCardDetails({ ...cardDetails, expiry: e.target.value })
+                }
               />
               {cardErrors.expiry && (
                 <div className="invalid-feedback">{cardErrors.expiry}</div>
@@ -277,13 +243,12 @@ function PaymentPage() {
               <label className="form-label">CVV</label>
               <input
                 type="password"
-                inputMode="numeric"
-                autoComplete="cc-csc"
                 className={`form-control mb-2 ${cardErrors.cvv ? "is-invalid" : ""}`}
                 placeholder="CVV"
                 value={cardDetails.cvv}
-                onChange={onCvvChange}
-                maxLength={4}
+                onChange={(e) =>
+                  setCardDetails({ ...cardDetails, cvv: e.target.value })
+                }
               />
               {cardErrors.cvv && (
                 <div className="invalid-feedback">{cardErrors.cvv}</div>
@@ -301,18 +266,26 @@ function PaymentPage() {
         </div>
       )}
 
-      {/* COD */}
       {method === "cod" && (
         <div className="text-center mt-3">
           <button
             className="btn btn-primary"
-            onClick={() => {
-              clearCart();
-              toast.success("COD order placed successfully!");
-              setTimeout(() => navigate(`/order-success/${orderId}`), 1000);
+            disabled={loading}
+            onClick={async () => {
+              try {
+                setLoading(true);
+                await orderAPI.pay(orderId, { method: "COD", status: "paid" });
+                toast.success("COD order confirmed!");
+                clearCart();
+                setTimeout(() => navigate(`/order-success/${orderId}`), 1200);
+              } catch (err) {
+                toast.error("Failed to confirm COD order.");
+              } finally {
+                setLoading(false);
+              }
             }}
           >
-            Confirm COD Order
+            {loading ? "Confirming..." : "Confirm COD Order"}
           </button>
         </div>
       )}
