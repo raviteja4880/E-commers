@@ -58,3 +58,13 @@
   }
 }
 
+@keyframes cart-bounce {
+  0% { transform: scale(1); }
+  40% { transform: scale(1.2); }
+  60% { transform: scale(0.9); }
+  100% { transform: scale(1); }
+}
+
+.cart-bounce {
+  animation: cart-bounce 0.6s ease;
+}

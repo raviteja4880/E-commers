@@ -1,0 +1,62 @@
+.cart-added-toast {
+  position: fixed;
+  top: 15%;
+  left: 50%;
+  transform: translateX(-50%);
+  background: #28a745;
+  color: white;
+  padding: 14px 28px;
+  border-radius: 10px;
+  font-weight: 600;
+  font-size: 16px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.25);
+  animation: cart-toast-pop 0.8s ease-out, cart-toast-fade 2s ease-in forwards;
+  z-index: 1050;
+}
+
+@keyframes cart-toast-pop {
+  0% {
+    transform: translate(-50%, -20px) scale(0.8);
+    opacity: 0;
+  }
+  40% {
+    transform: translate(-50%, 0) scale(1.05);
+    opacity: 1;
+  }
+  100% {
+    transform: translate(-50%, 0) scale(1);
+    opacity: 1;
+  }
+}
+
+@keyframes cart-toast-fade {
+  0% {
+    opacity: 1;
+  }
+  90% {
+    opacity: 0.8;
+  }
+  100% {
+    opacity: 0;
+  }
+}
+
+@keyframes cart-bounce {
+  0% {
+    transform: scale(1);
+  }
+  40% {
+    transform: scale(1.25);
+  }
+  60% {
+    transform: scale(0.9);
+  }
+  100% {
+    transform: scale(1);
+  }
+}
+
+.cart-bounce {
+  animation: cart-bounce 0.6s ease;
+}
+

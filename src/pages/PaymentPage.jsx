@@ -27,8 +27,6 @@ function PaymentPage() {
   });
   const [cardErrors, setCardErrors] = useState({});
   const pollingRef = useRef(null);
-  const initiatedRef = useRef(false);
-  const confirmedRef = useRef(false);
 
   // ===== FETCH ORDER =====
   useEffect(() => {
@@ -48,28 +46,6 @@ function PaymentPage() {
   useEffect(() => {
     if (method === "qr" && order) handleInitiatePayment();
   }, [method, order]);
-
-  // ===== EXIT OR NAVIGATION ALERT =====
-  useEffect(() => {
-    const handleUnload = (e) => {
-      if (initiatedRef.current && !confirmedRef.current) {
-        // Show a toast before exit (using slight delay)
-        setTimeout(() => {
-          toast.error("Payment initiation failed or cancelled.");
-        }, 50);
-        e.preventDefault();
-        e.returnValue = ""; // triggers browser native warning
-      }
-    };
-
-    window.addEventListener("beforeunload", handleUnload);
-    return () => {
-      if (initiatedRef.current && !confirmedRef.current) {
-        toast.error("Payment initiation failed or cancelled.");
-      }
-      window.removeEventListener("beforeunload", handleUnload);
-    };
-  }, []);
 
   // ===== CARD VALIDATION =====
   const validateCardDetails = () => {
@@ -96,10 +72,10 @@ function PaymentPage() {
       };
       const { data } = await paymentAPI.initiate(payload);
       setPaymentId(data.paymentId);
-      initiatedRef.current = true;
 
       if (method === "qr") {
         setQrCode(data.qrCodeUrl);
+        startPolling();
       }
     } catch (err) {
       toast.error("Payment initiation failed");
@@ -112,20 +88,48 @@ function PaymentPage() {
   // ===== CONFIRM PAYMENT =====
 const handleConfirmPayment = async () => {
   if (method === "card" && !validateCardDetails()) return;
+
   setLoading(true);
   try {
-    await paymentAPI.confirm(orderId);
-    confirmedRef.current = true;
-    toast.success("Payment successful!");
+    const res = await paymentAPI.confirm(orderId);
 
-    await Promise.resolve(clearCart());
-    setTimeout(() => navigate(`/order-success/${orderId}`), 1000);
+    if (res?.data?.success) {
+      toast.success("Payment successful!");
+
+      setTimeout(() => {
+        toast.info("Order placed successfully ");
+      }, 800);
+
+      clearCart();
+
+      setTimeout(() => navigate(`/order-success/${orderId}`), 1800);
+    } else {
+      toast.error("Payment confirmation failed ");
+    }
   } catch (err) {
-    toast.error("Payment confirmation failed");
+    toast.error("Payment confirmation failed ");
   } finally {
     setLoading(false);
   }
 };
+
+
+  // ===== POLLING (QR) =====
+  const startPolling = () => {
+    pollingRef.current = setInterval(async () => {
+      try {
+        const { data } = await paymentAPI.verify(orderId);
+        if (data.status === "paid") {
+          toast.success("Payment verified successfully!");
+          clearCart();
+          clearInterval(pollingRef.current);
+          navigate(`/order-success/${orderId}`);
+        }
+      } catch (err) {
+        console.error("Polling error:", err.message);
+      }
+    }, 5000);
+  };
 
   if (!order) return <Loader />;
 

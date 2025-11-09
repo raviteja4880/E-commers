@@ -1,24 +1,46 @@
-import React from "react";
+import React, { useEffect, useState } from "react";
 import { useCart } from "../context/CartContext";
 import { useNavigate } from "react-router-dom";
 import Loader from "../pages/Loader";
+import "../styles/Cart.css"; 
 
 function Cart() {
   const { state, updateCartQty, removeFromCart, clearCart } = useCart();
   const { cartItems, totalPrice, loading, error } = state;
   const navigate = useNavigate();
 
-  if (loading) return <Loader />;
-  if (error) return <p className="text-center mt-5 text-danger">{error}</p>;
+  const [addedItem, setAddedItem] = useState(null);
 
-  // Helper function to handle safe updates
+  useEffect(() => {
+    // Detect if redirected from Add to Cart
+    const newItem = sessionStorage.getItem("cartAnimation");
+    if (newItem) {
+      setAddedItem(newItem);
+      setTimeout(() => {
+        setAddedItem(null);
+        sessionStorage.removeItem("cartAnimation");
+      }, 2000);
+    }
+  }, []);
+
+  if (loading) return <Loader />;
+  if (error)
+    return <p className="text-center mt-5 text-danger fw-semibold">{error}</p>;
+
   const handleQuantityChange = (productId, value) => {
-    const qty = Math.max(1, Number(value) || 1); 
+    const qty = Math.max(1, Number(value) || 1);
     updateCartQty(productId, qty);
   };
 
   return (
-    <div className="container mt-4 mb-5">
+    <div className="container mt-4 mb-5 position-relative">
+      {/* Floating animation message */}
+      {addedItem && (
+        <div className="cart-added-toast">
+          <strong>{addedItem}</strong> added to cart!
+        </div>
+      )}
+
       <h2 className="fw-bold mb-4 text-center">My Cart</h2>
 
       {cartItems.length === 0 ? (
@@ -46,11 +68,27 @@ function Cart() {
                   const productId = item.product?._id ?? item.productId;
                   const productName = item.product?.name || "Product Unavailable";
                   const productPrice = item.product?.price || 0;
+                  const productImage = item.product?.image;
 
                   return (
                     <tr key={productId}>
-                      <td>{productName}</td>
-                      <td>₹{productPrice}</td>
+                      <td className="d-flex align-items-center gap-2">
+                        {productImage && (
+                          <img
+                            src={productImage}
+                            alt={productName}
+                            style={{
+                              width: "50px",
+                              height: "50px",
+                              objectFit: "cover",
+                              borderRadius: "6px",
+                              border: "1px solid #ddd",
+                            }}
+                          />
+                        )}
+                        <span>{productName}</span>
+                      </td>
+                      <td>₹{productPrice.toLocaleString("en-IN")}</td>
                       <td>
                         <div className="d-flex align-items-center justify-content-center">
                           <button
@@ -67,13 +105,8 @@ function Cart() {
                             type="number"
                             value={item.qty}
                             min="1"
-                            style={{
-                              width: "60px",
-                              textAlign: "center",
-                              border: "1px solid #ccc",
-                              borderRadius: "5px",
-                              padding: "4px",
-                            }}
+                            className="form-control text-center"
+                            style={{ width: "60px" }}
                             onChange={(e) =>
                               handleQuantityChange(productId, e.target.value)
                             }
@@ -94,7 +127,7 @@ function Cart() {
                           </button>
                         </div>
                       </td>
-                      <td>₹{(productPrice * item.qty).toFixed(2)}</td>
+                      <td>₹{(productPrice * item.qty).toLocaleString("en-IN")}</td>
                       <td>
                         <button
                           className="btn btn-danger btn-sm"
@@ -111,12 +144,11 @@ function Cart() {
           </div>
 
           <div className="d-flex flex-column flex-md-row justify-content-between align-items-center mt-4 p-3 border rounded shadow-sm bg-light">
-            <h4 className="mb-3 mb-md-0">Total: ₹{totalPrice.toFixed(2)}</h4>
+            <h4 className="mb-3 mb-md-0">
+              Total: ₹{totalPrice.toLocaleString("en-IN")}
+            </h4>
             <div>
-              <button
-                className="btn btn-outline-danger me-3"
-                onClick={clearCart}
-              >
+              <button className="btn btn-outline-danger me-3" onClick={clearCart}>
                 Clear Cart
               </button>
               <button

@@ -9,6 +9,7 @@ import {
   FaHome,
   FaEdit,
 } from "react-icons/fa";
+import "../styles/ProductCard.css"; 
 
 function Navbar() {
   const userInfo = JSON.parse(localStorage.getItem("userInfo"));
@@ -20,6 +21,7 @@ function Navbar() {
   const [dropdownOpen, setDropdownOpen] = useState(false);
   const dropdownRef = useRef(null);
 
+  // Logout
   const handleLogout = () => {
     localStorage.removeItem("userInfo");
     localStorage.removeItem("token");
@@ -37,6 +39,19 @@ function Navbar() {
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
 
+  // Bounce cart icon when an item is added
+  useEffect(() => {
+    const addedItem = sessionStorage.getItem("cartAnimation");
+    if (addedItem) {
+      const cartIcon = document.getElementById("cart-icon");
+      if (cartIcon) {
+        cartIcon.classList.add("cart-bounce");
+        setTimeout(() => cartIcon.classList.remove("cart-bounce"), 600);
+      }
+      sessionStorage.removeItem("cartAnimation");
+    }
+  }, [cartCount]);
+
   return (
     <nav
       className="navbar navbar-expand-lg sticky-top shadow-sm"
@@ -46,7 +61,7 @@ function Navbar() {
       }}
     >
       <div className="container">
-        {/* Brand */}
+        {/* === Brand === */}
         <Link
           className="navbar-brand fw-semibold"
           to="/"
@@ -55,7 +70,7 @@ function Navbar() {
           MyStore
         </Link>
 
-        {/* Toggler */}
+        {/* === Toggler === */}
         <button
           className="navbar-toggler border-0"
           type="button"
@@ -68,7 +83,7 @@ function Navbar() {
           <span className="navbar-toggler-icon"></span>
         </button>
 
-        {/* Nav Links */}
+        {/* === Nav Links === */}
         <div className="collapse navbar-collapse" id="navbarNav">
           <ul className="navbar-nav ms-auto align-items-lg-center gap-lg-3">
             <li className="nav-item">
@@ -80,19 +95,42 @@ function Navbar() {
 
             {userInfo ? (
               <>
+                {/*  Cart icon with animation and fixed badge */}
                 <li className="nav-item">
                   <Link
-                    className="nav-link d-flex align-items-center gap-2"
+                    className="nav-link d-flex align-items-center gap-2 position-relative"
                     to="/cart"
+                    style={{ position: "relative" }}
                   >
-                    <FaShoppingCart size={18} />
+                    <div style={{ position: "relative" }}>
+                      <FaShoppingCart size={20} id="cart-icon" />
+                      {cartCount > 0 && (
+                        <span
+                          className="badge bg-primary position-absolute"
+                          style={{
+                            top: "-8px",
+                            right: "-10px",
+                            fontSize: "0.7rem",
+                            borderRadius: "50%",
+                            padding: "4px 6px",
+                            minWidth: "18px",
+                            height: "18px",
+                            lineHeight: "10px",
+                            display: "flex",
+                            alignItems: "center",
+                            justifyContent: "center",
+                            boxShadow: "0 0 4px rgba(0,0,0,0.25)",
+                          }}
+                        >
+                          {cartCount}
+                        </span>
+                      )}
+                    </div>
                     <span className="fw-medium">Cart</span>
-                    {cartCount > 0 && (
-                      <span className="badge bg-primary ms-1">{cartCount}</span>
-                    )}
                   </Link>
                 </li>
 
+                {/* My Orders */}
                 <li className="nav-item">
                   <Link
                     className="nav-link d-flex align-items-center gap-2"
@@ -103,7 +141,7 @@ function Navbar() {
                   </Link>
                 </li>
 
-                {/* User Dropdown */}
+                {/* === User Dropdown === */}
                 <li className="nav-item dropdown" ref={dropdownRef}>
                   <div
                     className="nav-link d-flex align-items-center gap-2"
@@ -158,7 +196,7 @@ function Navbar() {
                         <hr className="dropdown-divider my-2" />
                       </li>
 
-                      {/* ✅ Edit Profile */}
+                      {/* Edit Profile */}
                       <li>
                         <button
                           className="dropdown-item d-flex align-items-center gap-2 fw-semibold text-primary"

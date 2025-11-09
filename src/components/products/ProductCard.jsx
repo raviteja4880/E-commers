@@ -2,6 +2,7 @@ import React from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { useCart } from "../../context/CartContext";
 import { toast } from "react-toastify";
+import "../../styles/ProductCard.css";
 
 function ProductCard({ product }) {
   const { addToCart } = useCart();
@@ -12,19 +13,59 @@ function ProductCard({ product }) {
     e.stopPropagation();
 
     const userInfo = JSON.parse(localStorage.getItem("userInfo"));
-
     if (!userInfo?.token) {
       toast.warning("You need to log in to access the cart");
       navigate("/login");
       return;
     }
 
-    try {
-      await addToCart(product._id, 1);
-      toast.success(`${product.name} added to cart`);
-    } catch {
-      toast.error("Failed to add to cart");
-    }
+    const productImage = e.currentTarget.closest("div").querySelector("img");
+    const cartIcon = document.getElementById("cart-icon");
+    if (!cartIcon || !productImage) return;
+
+    // Create flying clone
+    const clone = productImage.cloneNode(true);
+    const imgRect = productImage.getBoundingClientRect();
+    const cartRect = cartIcon.getBoundingClientRect();
+
+    clone.style.position = "fixed";
+    clone.style.left = imgRect.left + "px";
+    clone.style.top = imgRect.top + "px";
+    clone.style.width = imgRect.width + "px";
+    clone.style.height = imgRect.height + "px";
+    clone.style.borderRadius = "8px";
+    clone.style.transition =
+      "all 0.8s cubic-bezier(0.4, 0.7, 0.2, 1.1), opacity 0.8s";
+    clone.style.zIndex = 9999;
+    clone.style.pointerEvents = "none";
+    clone.style.opacity = 1;
+    document.body.appendChild(clone);
+
+    // Animate toward cart icon with a curved path
+    requestAnimationFrame(() => {
+      clone.style.transform = `translate3d(
+        ${cartRect.left - imgRect.left}px,
+        ${cartRect.top - imgRect.top}px,
+        0
+      ) scale(0.2) rotate(25deg)`;
+      clone.style.opacity = 0.1;
+    });
+
+    // Clean up after animation
+    setTimeout(() => {
+      clone.remove();
+
+      // Bounce the cart icon 
+      cartIcon.classList.add("cart-bounce");
+      setTimeout(() => cartIcon.classList.remove("cart-bounce"), 600);
+
+      addToCart(product._id, 1)
+        .then(() => {
+          sessionStorage.setItem("cartAnimation", product.name);
+          navigate("/cart");
+        })
+        .catch(() => toast.error("Failed to add to cart"));
+    }, 850);
   };
 
   return (
