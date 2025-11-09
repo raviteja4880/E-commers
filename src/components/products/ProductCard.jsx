@@ -38,7 +38,10 @@ function ProductCard({ product }) {
         </div>
         <h3 style={styles.title}>{product.name}</h3>
         <p style={styles.brand}>{product.brand}</p>
-        <p style={styles.price}>₹{product.price}</p>
+        <p style={styles.price}>
+          <span style={{ fontFamily: "sans-serif", marginRight: "2px" }}>₹</span>
+          {product.price.toLocaleString("en-IN")}
+        </p>
       </Link>
 
       <button style={styles.button} onClick={handleAddToCart}>
