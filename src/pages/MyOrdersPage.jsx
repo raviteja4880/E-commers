@@ -7,25 +7,43 @@ import {
   FaTimesCircle,
   FaClock,
   FaTruck,
-  FaMoneyBillWave,
   FaQrcode,
   FaCreditCard,
 } from "react-icons/fa";
+
+// ✅ Unified Rupee formatter component
+const Rupee = ({ value, size = "1rem", bold = false, color = "#000" }) => (
+  <span
+    style={{
+      fontFamily:
+        "system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif",
+      fontSize: size,
+      fontWeight: bold ? 600 : 500,
+      color,
+      display: "inline-flex",
+      alignItems: "baseline",
+      gap: "2px",
+    }}
+  >
+    <span
+      style={{
+        fontFamily: "sans-serif",
+        fontWeight: 600,
+        transform: "translateY(-0.5px)",
+      }}
+    >
+      ₹
+    </span>
+    <span>{value?.toLocaleString("en-IN")}</span>
+  </span>
+);
 
 function MyOrdersPage() {
   const [orders, setOrders] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
-  const pollingRef = useRef(null);
-  const ordersRef = useRef(orders);
   const navigate = useNavigate();
 
-  // Keep ref updated
-  useEffect(() => {
-    ordersRef.current = orders;
-  }, [orders]);
-
-  // Fetch orders from backend
   const fetchOrders = async () => {
     try {
       const { data } = await orderAPI.getMyOrders();
@@ -37,162 +55,58 @@ function MyOrdersPage() {
     }
   };
 
-  // Polling payment status every 3 seconds
   useEffect(() => {
     fetchOrders();
-
-    pollingRef.current = setInterval(async () => {
-      try {
-        const qrOrders = ordersRef.current.filter(
-          (o) => !o.isPaid && o.paymentMethod === "qr"
-        );
-
-        if (qrOrders.length === 0) return;
-
-        for (const order of qrOrders) {
-          const { data } = await orderAPI.verifyPayment(order._id);
-
-          if (data.status === "paid") {
-            setOrders((prevOrders) =>
-              prevOrders.map((o) =>
-                o._id === order._id
-                  ? {
-                      ...o,
-                      isPaid: true,
-                      paymentMethod: data.paymentMethod || o.paymentMethod,
-                    }
-                  : o
-              )
-            );
-          }
-        }
-      } catch (err) {
-        console.error("Payment polling error:", err);
-      }
-    }, 3000);
-
-    return () => clearInterval(pollingRef.current);
-  }, []);
-
-  // Refetch orders every 10s for updates
-  useEffect(() => {
-    const interval = setInterval(fetchOrders, 10000);
-    return () => clearInterval(interval);
   }, []);
 
   if (loading) return <Loader />;
   if (error) return <div className="alert alert-danger">{error}</div>;
   if (orders.length === 0)
-    return <p className="text-center mt-5">No orders yet.</p>;
+    return <p className="text-center mt-5 fs-5 text-muted">No orders yet.</p>;
 
   return (
-    <div className="container mt-4">
-      <h2 className="mb-4">My Orders</h2>
-      {orders.map((order) => (
-        <div key={order._id} className="card mb-3 p-3 shadow-sm">
-          <div className="d-flex justify-content-between mb-2">
-            <span className="fw-semibold">Order #{order._id}</span>
-            <span className="text-muted">
-              {new Date(order.createdAt).toLocaleString()}
-            </span>
-          </div>
+    <div
+      className="container-fluid py-5 px-3 px-md-5"
+      style={{
+        backgroundColor: "#f8f9fb",
+        minHeight: "100vh",
+      }}
+    >
+      <h2 className="text-center fw-bold mb-5" style={{ color: "#007bff" }}>
+        My Orders
+      </h2>
 
-          <ul className="list-group mb-2">
-            {order.items.map((item, idx) => (
-              <li
-                key={idx}
-                className="list-group-item d-flex align-items-center"
-              >
-                <img
-                  src={item.product?.image || item.image}
-                  alt={item.name}
-                  style={{ width: 50, marginRight: 10, borderRadius: "6px" }}
-                />
-                <span>
-                  {item.name} <small className="text-muted">x {item.qty}</small>
-                </span>
-                <span className="ms-auto fw-semibold">
-                  ₹{item.price * item.qty}
-                </span>
-              </li>
-            ))}
-          </ul>
-
-          <p className="mb-1">
-            Total: <strong>₹{order.totalPrice}</strong>
-          </p>
-
-          <p className="mb-1">
-            {order.isPaid ? (
-              <span className="text-success d-flex align-items-center gap-2">
-                Payment Status: Paid <FaCheckCircle />
-              </span>
-            ) : (
-              <span className="text-warning d-flex align-items-center gap-2">
-                Payment Status: Pending <FaClock />
-              </span>
-            )}
-          </p>
-
-          <p className="mb-2">
-            {order.isDelivered ? (
-              <span className="text-success d-flex align-items-center gap-2">
-                Delivery Status: Delivered <FaTruck />
-              </span>
-            ) : (
-              <span className="text-danger d-flex align-items-center gap-2">
-                Delivery Status: Not Delivered <FaTimesCircle />
-              </span>
-            )}
-          </p>
-
-          {/* Payment Options for Pending Orders */}
-          {!order.isPaid && (
-            <div className="d-flex align-items-center gap-2">
-              {/* Show single "Pay Now" button for QR/Card orders */}
-              {(order.paymentMethod === "qr" ||
-                order.paymentMethod === "card") && (
-                <button
-                  className="btn btn-sm btn-success d-flex align-items-center gap-1"
-                  onClick={() =>
-                    navigate(`/payment/${order._id}?method=${order.paymentMethod}`)
-                  }
-                >
-                  Pay Now
-                </button>
-              )}
-
-              {/* COD: Dropdown that acts as button */}
-              {order.paymentMethod === "COD" && (
-                <CODDropdown orderId={order._id} />
-              )}
-            </div>
-          )}
-
-          <div className="d-flex gap-2 mt-3">
-            <Link
-              to={`/order-success/${order._id}`}
-              className="btn btn-sm btn-outline-primary"
-            >
-              View Details
-            </Link>
-          </div>
-        </div>
-      ))}
+      <div
+        className="order-grid"
+        style={{
+          display: "grid",
+          gap: "24px",
+          gridTemplateColumns: "repeat(auto-fit, minmax(290px, 1fr))",
+          maxWidth: "1400px",
+          margin: "0 auto",
+        }}
+      >
+        {orders.map((order) => (
+          <OrderCard key={order._id} order={order} navigate={navigate} />
+        ))}
+      </div>
     </div>
   );
 }
 
-// COD Dropdown Component (self-contained)
-const CODDropdown = ({ orderId }) => {
+// ========================= ORDER CARD =========================
+const OrderCard = ({ order, navigate }) => {
   const [open, setOpen] = useState(false);
   const dropdownRef = useRef(null);
-  const navigate = useNavigate();
+  const buttonRef = useRef(null);
 
   // Close dropdown on outside click
   useEffect(() => {
     const handleClickOutside = (e) => {
-      if (dropdownRef.current && !dropdownRef.current.contains(e.target)) {
+      const dropdownEl = dropdownRef.current;
+      const buttonEl = buttonRef.current;
+      if (!dropdownEl || !buttonEl) return;
+      if (!dropdownEl.contains(e.target) && !buttonEl.contains(e.target)) {
         setOpen(false);
       }
     };
@@ -201,50 +115,234 @@ const CODDropdown = ({ orderId }) => {
   }, []);
 
   return (
-    <div className="position-relative" ref={dropdownRef}>
-      <button
-        className="btn btn-sm btn-success d-flex align-items-center gap-2"
-        onClick={() => setOpen(!open)}
+    <div
+      className="order-card position-relative"
+      style={{
+        background: "#fff",
+        borderRadius: "16px",
+        boxShadow: "0 4px 16px rgba(0,0,0,0.08)",
+        transition: "transform 0.25s ease",
+        overflow: "hidden",
+      }}
+    >
+      {/* HEADER */}
+      <div
+        className="d-flex justify-content-between align-items-center px-3 py-2 border-bottom flex-wrap"
+        style={{ background: "#f9fafc" }}
       >
-        Pay Now
-      </button>
+        <span style={{ fontSize: "0.85rem" }}>
+          <strong style={{ color: "#007bff" }}>
+            #{order._id.slice(-6).toUpperCase()}
+          </strong>
+        </span>
+        <span className="text-muted" style={{ fontSize: "0.85rem" }}>
+          {new Date(order.createdAt).toLocaleDateString("en-IN", {
+            day: "2-digit",
+            month: "short",
+            year: "numeric",
+          })}
+        </span>
+      </div>
 
-      {open && (
-        <ul
-          className="dropdown-menu show shadow mt-1"
+      {/* ITEMS */}
+      <div className="p-3">
+        {order.items.map((item, idx) => (
+          <div
+            key={idx}
+            className="d-flex justify-content-between align-items-center mb-2 flex-wrap"
+          >
+            <div className="d-flex align-items-center gap-2 mb-1">
+              <img
+                src={item.image || item.product?.image}
+                alt={item.name}
+                style={{
+                  width: 50,
+                  height: 50,
+                  borderRadius: 6,
+                  objectFit: "cover",
+                  border: "1px solid #eee",
+                }}
+              />
+              <div style={{ maxWidth: "180px" }}>
+                <div
+                  style={{
+                    fontSize: "0.9rem",
+                    fontWeight: 500,
+                    color: "#333",
+                    lineHeight: "1.2",
+                  }}
+                >
+                  {item.name}
+                </div>
+                <small className="text-muted">x {item.qty}</small>
+              </div>
+            </div>
+            <div className="fw-semibold text-nowrap">
+              <Rupee value={item.price * item.qty} color="#333" />
+            </div>
+          </div>
+        ))}
+      </div>
+
+      {/* TOTAL */}
+      <div
+        className="d-flex justify-content-between align-items-center border-top border-bottom px-3 py-2"
+        style={{ background: "#f9fafc", fontWeight: "600" }}
+      >
+        <span>Total</span>
+        <Rupee value={order.totalPrice} bold color="#000" />
+      </div>
+
+      {/* STATUS */}
+      <div className="px-3 py-3 d-flex flex-column gap-2">
+        <StatusBadge
+          isActive={order.isPaid}
+          activeColor="#28a745"
+          inactiveColor="#ffc107"
+          icon={order.isPaid ? <FaCheckCircle /> : <FaClock />}
+          label={
+            order.isPaid
+              ? `Paid (${order.paymentMethod.toUpperCase()})`
+              : `Pending (${order.paymentMethod.toUpperCase()})`
+          }
+        />
+
+        <StatusBadge
+          isActive={order.isDelivered}
+          activeColor="#28a745"
+          inactiveColor="#dc3545"
+          icon={order.isDelivered ? <FaTruck /> : <FaTimesCircle />}
+          label={order.isDelivered ? "Delivered" : "Not Delivered"}
+        />
+      </div>
+
+      {/* BUTTONS */}
+      <div className="px-3 pb-3 position-relative" ref={dropdownRef}>
+        {!order.isPaid && (
+          <div className="position-relative mb-2">
+            <button
+              ref={buttonRef}
+              className="btn btn-success w-100 fw-semibold py-2"
+              onClick={() => setOpen(!open)}
+              style={{
+                borderRadius: "10px",
+                background: "#28a745",
+                border: "none",
+              }}
+            >
+              Pay Now ▾
+            </button>
+
+            {open && (
+              <div
+                className="shadow dropdown-fade"
+                style={{
+                  position: "absolute",
+                  top: "110%",
+                  left: "50%",
+                  transform: "translateX(-50%)",
+                  width: "90%",
+                  background: "#fff",
+                  borderRadius: "10px",
+                  marginTop: "6px",
+                  boxShadow: "0 8px 20px rgba(0,0,0,0.15)",
+                  overflow: "hidden",
+                  zIndex: 999,
+                }}
+              >
+                <button
+                  className="dropdown-item py-2 d-flex align-items-center gap-2"
+                  onClick={() => {
+                    navigate(`/payment/${order._id}?method=qr`);
+                    setOpen(false);
+                  }}
+                >
+                  <FaQrcode /> Pay via QR Code
+                </button>
+                <button
+                  className="dropdown-item py-2 d-flex align-items-center gap-2"
+                  onClick={() => {
+                    navigate(`/payment/${order._id}?method=card`);
+                    setOpen(false);
+                  }}
+                >
+                  <FaCreditCard /> Pay via Card
+                </button>
+              </div>
+            )}
+          </div>
+        )}
+
+        <Link
+          to={`/order-success/${order._id}`}
+          className="btn w-100 fw-semibold py-2"
           style={{
-            position: "absolute",
-            zIndex: 1050,
-            display: "block",
-            minWidth: "200px",
+            borderRadius: "10px",
+            border: "1.5px solid #007bff",
+            color: "#007bff",
+            background: "#fff",
           }}
         >
-          <li>
-            <button
-              className="dropdown-item d-flex align-items-center gap-2"
-              onClick={() => {
-                navigate(`/payment/${orderId}?method=qr`);
-                setOpen(false);
-              }}
-            >
-              <FaQrcode /> Pay via QR Code
-            </button>
-          </li>
-          <li>
-            <button
-              className="dropdown-item d-flex align-items-center gap-2"
-              onClick={() => {
-                navigate(`/payment/${orderId}?method=card`);
-                setOpen(false);
-              }}
-            >
-              <FaCreditCard /> Pay via Debit Card
-            </button>
-          </li>
-        </ul>
-      )}
+          View Details
+        </Link>
+      </div>
+
+      {/* FOOTER */}
+      <div
+        className="text-center border-top py-2"
+        style={{
+          background: "#f9fafc",
+          borderBottomLeftRadius: "16px",
+          borderBottomRightRadius: "16px",
+          fontSize: "0.85rem",
+          color: "#666",
+        }}
+      >
+        Expected Delivery:{" "}
+        <strong style={{ color: "#333" }}>
+          {new Date(order.createdAt).toLocaleDateString("en-IN", {
+            day: "2-digit",
+            month: "short",
+            year: "numeric",
+          })}
+        </strong>
+      </div>
+
+      {/* Fade animation */}
+      <style>{`
+        @keyframes dropdownFade {
+          from { opacity: 0; transform: translate(-50%, -10px); }
+          to { opacity: 1; transform: translate(-50%, 0); }
+        }
+        .dropdown-fade {
+          animation: dropdownFade 0.2s ease;
+        }
+        @media (max-width: 768px) {
+          .order-card {
+            border-radius: 12px;
+          }
+        }
+      `}</style>
     </div>
   );
 };
+
+// ========================= STATUS BADGE =========================
+const StatusBadge = ({ isActive, activeColor, inactiveColor, icon, label }) => (
+  <div
+    className="badge d-flex align-items-center justify-content-center gap-2 text-wrap"
+    style={{
+      backgroundColor: isActive ? `${activeColor}15` : `${inactiveColor}15`,
+      color: isActive ? activeColor : inactiveColor,
+      fontSize: "0.9rem",
+      padding: "8px",
+      borderRadius: "8px",
+      textAlign: "center",
+      width: "100%",
+    }}
+  >
+    {icon} {label}
+  </div>
+);
 
 export default MyOrdersPage;

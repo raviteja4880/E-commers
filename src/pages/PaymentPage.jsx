@@ -86,33 +86,69 @@ function PaymentPage() {
   };
 
   // ===== CONFIRM PAYMENT =====
-const handleConfirmPayment = async () => {
-  if (method === "card" && !validateCardDetails()) return;
+  const handleConfirmPayment = async () => {
+    if (method === "card" && !validateCardDetails()) return;
 
-  setLoading(true);
-  try {
-    const res = await paymentAPI.confirm(orderId);
+    setLoading(true);
+    try {
+      const res = await paymentAPI.confirm(orderId);
 
-    if (res?.data?.success) {
-      toast.success("Payment successful!");
+      if (res?.data?.success) {
+        clearCart();
 
-      setTimeout(() => {
-        toast.info("Order placed successfully ");
-      }, 800);
+        // Show Success Animation Overlay
+        const overlay = document.createElement("div");
+        overlay.innerHTML = `
+          <div id="success-overlay" style="
+            position: fixed; inset: 0;
+            display: flex; justify-content: center; align-items: center;
+            background: rgba(255,255,255,0.95);
+            z-index: 9999;
+            flex-direction: column;
+            font-family: sans-serif;
+            animation: fadeIn 0.3s ease-in;
+          ">
+            <div style="
+              width: 120px; height: 120px;
+              background: #28a745;
+              border-radius: 50%;
+              display: grid; place-items: center;
+              animation: popIn 0.5s ease-out;
+              box-shadow: 0 6px 25px rgba(40,167,69,0.25);
+            ">
+              <svg viewBox="0 0 52 52" width="58" height="58">
+                <circle cx="26" cy="26" r="24" fill="transparent" stroke="rgba(255,255,255,0.2)" strokeWidth="2"/>
+                <path d="M14 27 L22.5 35 L38 18"
+                  fill="transparent" stroke="#fff" strokeWidth="5" strokeLinecap="round" strokeLinejoin="round"
+                  style="stroke-dasharray: 1000; stroke-dashoffset: 1000; animation: draw 0.8s ease forwards 0.2s;"
+                />
+              </svg>
+            </div>
+            <h3 style="margin-top: 20px; color: #222;">Payment Successful!</h3>
+            <p style="color: #555;">Your order has been placed successfully.</p>
+          </div>
+          <style>
+            @keyframes draw { to { stroke-dashoffset: 0; } }
+            @keyframes fadeIn { from {opacity: 0;} to {opacity: 1;} }
+            @keyframes popIn { 0% {transform: scale(0);} 70% {transform: scale(1.1);} 100% {transform: scale(1);} }
+          </style>
+        `;
+        document.body.appendChild(overlay);
 
-      clearCart();
-
-      setTimeout(() => navigate(`/order-success/${orderId}`), 1800);
-    } else {
-      toast.error("Payment confirmation failed ");
+        // Redirect after animation
+        setTimeout(() => {
+          document.getElementById("success-overlay")?.remove();
+          navigate(`/order-success/${orderId}`);
+        }, 2500);
+      } else {
+        toast.error("Payment confirmation failed");
+      }
+    } catch (err) {
+      toast.error("Payment confirmation failed");
+    } finally {
+      setLoading(false);
     }
-  } catch (err) {
-    toast.error("Payment confirmation failed ");
-  } finally {
-    setLoading(false);
-  }
-};
-
+  };
 
   // ===== POLLING (QR) =====
   const startPolling = () => {
