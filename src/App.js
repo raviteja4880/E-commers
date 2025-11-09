@@ -53,12 +53,7 @@ function App() {
             <Route path="/my-orders" element={<MyOrdersPage />} />
             <Route path="/product/:id" element={<ProductDetails />} />
             <Route path="/payment/:orderId" element={<PaymentPage />} />
-            <Route
-              path="/checkout"
-              element={
-                userInfo ? <CheckoutPage /> : <Navigate to="/login" />
-              }
-            />
+            <Route path="/checkout" element={<CheckoutPage />} />
           </Routes>
         </Layout>
 
