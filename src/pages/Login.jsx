@@ -9,6 +9,7 @@ function AuthLanding() {
     name: "",
     email: "",
     password: "",
+    phone: "", // ✅ new field for phone number
   });
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
@@ -17,7 +18,7 @@ function AuthLanding() {
   const toggleMode = () => {
     setError("");
     setIsLogin(!isLogin);
-    setFormData({ name: "", email: "", password: "" });
+    setFormData({ name: "", email: "", password: "", phone: "" });
   };
 
   const handleSubmit = async (e) => {
@@ -27,22 +28,38 @@ function AuthLanding() {
 
     try {
       if (isLogin) {
+        // ✅ Login flow
         const { data } = await authAPI.login({
           email: formData.email,
           password: formData.password,
         });
         localStorage.setItem("userInfo", JSON.stringify(data.user || data));
         localStorage.setItem("token", data.token);
+        navigate("/");
       } else {
+        // ✅ Register flow
         const { data } = await authAPI.register({
           name: formData.name,
           email: formData.email,
           password: formData.password,
+          phone: formData.phone, // ✅ send phone number to backend
         });
-        localStorage.setItem("userInfo", JSON.stringify(data.user || data));
-        localStorage.setItem("token", data.token);
+
+        // 🌀 Instead of navigating directly to home, switch to login mode with animation
+        setTimeout(() => {
+          setIsLogin(true);
+          setFormData({
+            name: "",
+            email: formData.email, // ✅ keep email for quick login
+            password: "",
+            phone: "",
+          });
+          setError("");
+        }, 600); // slight delay for smooth transition
+
+        // Optional success message
+        alert("Registration successful! Please login to continue.");
       }
-      navigate("/");
     } catch (err) {
       setError(err.response?.data?.message || "Something went wrong!");
     } finally {
@@ -54,8 +71,7 @@ function AuthLanding() {
     <div
       className="d-flex flex-column justify-content-center align-items-center vh-100"
       style={{
-        background:
-          "linear-gradient(135deg, #1e3c72 0%, #2a5298 100%)",
+        background: "linear-gradient(135deg, #1e3c72 0%, #2a5298 100%)",
         color: "#fff",
         overflow: "hidden",
       }}
@@ -96,19 +112,37 @@ function AuthLanding() {
 
           <form onSubmit={handleSubmit}>
             {!isLogin && (
-              <div className="mb-3">
-                <label className="form-label">Full Name</label>
-                <input
-                  type="text"
-                  className="form-control"
-                  value={formData.name}
-                  onChange={(e) =>
-                    setFormData({ ...formData, name: e.target.value })
-                  }
-                  placeholder="Enter your full name"
-                  required={!isLogin}
-                />
-              </div>
+              <>
+                <div className="mb-3">
+                  <label className="form-label">Full Name</label>
+                  <input
+                    type="text"
+                    className="form-control"
+                    value={formData.name}
+                    onChange={(e) =>
+                      setFormData({ ...formData, name: e.target.value })
+                    }
+                    placeholder="Enter your full name"
+                    required={!isLogin}
+                  />
+                </div>
+
+                <div className="mb-3">
+                  <label className="form-label">Phone Number</label>
+                  <input
+                    type="tel"
+                    className="form-control"
+                    value={formData.phone}
+                    onChange={(e) =>
+                      setFormData({ ...formData, phone: e.target.value })
+                    }
+                    placeholder="Enter your phone number"
+                    pattern="[0-9]{10}"
+                    title="Enter a valid 10-digit phone number"
+                    required={!isLogin}
+                  />
+                </div>
+              </>
             )}
 
             <div className="mb-3">

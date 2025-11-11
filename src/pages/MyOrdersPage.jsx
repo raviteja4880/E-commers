@@ -11,7 +11,7 @@ import {
   FaCreditCard,
 } from "react-icons/fa";
 
-// ✅ Unified Rupee formatter component
+// Unified Rupee formatter
 const Rupee = ({ value, size = "1rem", bold = false, color = "#000" }) => (
   <span
     style={{
@@ -100,13 +100,23 @@ const OrderCard = ({ order, navigate }) => {
   const dropdownRef = useRef(null);
   const buttonRef = useRef(null);
 
-  // Close dropdown on outside click
+  // Expected Delivery (+5 days)
+  const expected = new Date(order.createdAt);
+  expected.setDate(expected.getDate() + 5);
+  const expectedDelivery = expected.toLocaleDateString("en-IN", {
+    day: "2-digit",
+    month: "short",
+    year: "numeric",
+  });
+
   useEffect(() => {
     const handleClickOutside = (e) => {
-      const dropdownEl = dropdownRef.current;
-      const buttonEl = buttonRef.current;
-      if (!dropdownEl || !buttonEl) return;
-      if (!dropdownEl.contains(e.target) && !buttonEl.contains(e.target)) {
+      if (
+        dropdownRef.current &&
+        buttonRef.current &&
+        !dropdownRef.current.contains(e.target) &&
+        !buttonRef.current.contains(e.target)
+      ) {
         setOpen(false);
       }
     };
@@ -298,31 +308,8 @@ const OrderCard = ({ order, navigate }) => {
           color: "#666",
         }}
       >
-        Expected Delivery:{" "}
-        <strong style={{ color: "#333" }}>
-          {new Date(order.createdAt).toLocaleDateString("en-IN", {
-            day: "2-digit",
-            month: "short",
-            year: "numeric",
-          })}
-        </strong>
+        Expected Delivery: <strong style={{ color: "#333" }}>{expectedDelivery}</strong>
       </div>
-
-      {/* Fade animation */}
-      <style>{`
-        @keyframes dropdownFade {
-          from { opacity: 0; transform: translate(-50%, -10px); }
-          to { opacity: 1; transform: translate(-50%, 0); }
-        }
-        .dropdown-fade {
-          animation: dropdownFade 0.2s ease;
-        }
-        @media (max-width: 768px) {
-          .order-card {
-            border-radius: 12px;
-          }
-        }
-      `}</style>
     </div>
   );
 };

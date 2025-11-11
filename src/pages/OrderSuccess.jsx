@@ -2,8 +2,15 @@ import React, { useEffect, useState } from "react";
 import { useParams, Link } from "react-router-dom";
 import { orderAPI } from "../services/api";
 import Loader from "./Loader";
+import {
+  ShoppingCart,
+  Package,
+  Truck,
+  MapPin,
+  CheckCircle,
+} from "lucide-react";
 
-// ✅ Reusable Rupee formatter (consistent across app)
+// Reusable Rupee formatter
 const Rupee = ({ value, size = "1rem", bold = false, color = "#000" }) => (
   <span
     style={{
@@ -39,11 +46,11 @@ function OrderSuccessPage() {
   const [expectedDate, setExpectedDate] = useState("");
 
   const stages = [
-    "Order Placed",
-    "Packed",
-    "Shipped",
-    "Out for Delivery",
-    "Delivered",
+    { label: "Order Placed", icon: ShoppingCart },
+    { label: "Packed", icon: Package },
+    { label: "Shipped", icon: Truck },
+    { label: "Out for Delivery", icon: MapPin },
+    { label: "Delivered", icon: CheckCircle },
   ];
 
   useEffect(() => {
@@ -63,16 +70,12 @@ function OrderSuccessPage() {
           })
         );
 
-        // Calculate progress
+        // Calculate progress (5-day flow)
         const orderDate = new Date(data.createdAt);
         const now = new Date();
-        const daysPassed = Math.min(
-          5,
-          Math.max(1, Math.ceil((now - orderDate) / (1000 * 60 * 60 * 24)) + 1)
-        );
-
+        const diffDays = Math.floor((now - orderDate) / (1000 * 60 * 60 * 24));
         if (data.isDelivered) setProgressStage(stages.length);
-        else setProgressStage(daysPassed);
+        else setProgressStage(Math.min(diffDays + 1, stages.length - 1));
       } catch (err) {
         setError(err.response?.data?.message || "Failed to load order");
       } finally {
@@ -90,9 +93,7 @@ function OrderSuccessPage() {
 
   return (
     <div className="container py-4" style={{ maxWidth: "960px" }}>
-      <h2 className="text-primary mb-4 fw-bold text-center">
-        Order Details
-      </h2>
+      <h2 className="text-primary mb-4 fw-bold text-center">Order Details</h2>
 
       <div className="card shadow-sm p-4 rounded-4 border-0">
         <div className="row gy-3">
@@ -169,86 +170,94 @@ function OrderSuccessPage() {
           </div>
         </div>
 
-        {/* DELIVERY STATUS */}
+        {/* DELIVERY TRACKING */}
         <div className="mt-5">
-          <h5 className="fw-semibold mb-3">Delivery Status</h5>
-          <div
-            style={{
-              display: "flex",
-              justifyContent: "space-between",
-              position: "relative",
-              padding: "10px 0",
-              marginTop: 10,
-            }}
-          >
-            {/* Background bar */}
+          <h5 className="fw-semibold mb-3">Delivery Tracking</h5>
+          <div className="position-relative" style={{ padding: "30px 0 20px" }}>
+            {/* Line background */}
             <div
               style={{
                 position: "absolute",
-                top: "50%",
-                left: "5%",
-                right: "5%",
-                height: 6,
+                top: "35%",
+                left: "10%",
+                right: "10%",
+                height: 5,
                 background: "#e9ecef",
-                borderRadius: 4,
+                borderRadius: 5,
               }}
             ></div>
 
-            {/* Progress bar */}
+            {/* Progress line */}
             <div
               style={{
                 position: "absolute",
-                top: "50%",
-                left: "5%",
-                height: 6,
-                width: `${(progressStage / stages.length) * 90}%`,
+                top: "35%",
+                left: "10%",
+                height: 5,
+                width:
+                  progressStage >= stages.length
+                    ? "80%"
+                    : `${((progressStage - 1) / (stages.length - 1)) * 80}%`,
                 background: order.isDelivered ? "#28a745" : "#0d6efd",
-                borderRadius: 4,
-                transition: "width 0.6s ease",
+                borderRadius: 5,
+                transition: "width 0.8s ease-in-out",
               }}
             ></div>
 
-            {/* Stages */}
-            {stages.map((label, index) => (
-              <div
-                key={label}
-                style={{
-                  zIndex: 2,
-                  textAlign: "center",
-                  width: `${100 / stages.length}%`,
-                  color:
-                    index + 1 <= progressStage
-                      ? order.isDelivered
-                        ? "#28a745"
-                        : "#0d6efd"
-                      : "#999",
-                }}
-              >
-                <div
-                  style={{
-                    width: 18,
-                    height: 18,
-                    borderRadius: "50%",
-                    background:
-                      index + 1 <= progressStage
-                        ? order.isDelivered
-                          ? "#28a745"
-                          : "#0d6efd"
-                        : "#ccc",
-                    margin: "0 auto 8px",
-                  }}
-                ></div>
-                <small
-                  style={{
-                    fontSize: 14,
-                    fontWeight: 500,
-                    whiteSpace: "nowrap",
-                  }}
-                >
-                  {label}
-                </small>
-              </div>
-            ))}
+            {/* Stage icons */}
+            <div
+              className="d-flex justify-content-between"
+              style={{ position: "relative", zIndex: 2 }}
+            >
+              {stages.map(({ label, icon: Icon }, index) => {
+                const active = index + 1 <= progressStage;
+                const color = active
+                  ? order.isDelivered
+                    ? "#28a745"
+                    : "#0d6efd"
+                  : "#adb5bd";
+
+                return (
+                  <div
+                    key={label}
+                    className="text-center"
+                    style={{
+                      width: `${100 / stages.length}%`,
+                      color,
+                    }}
+                  >
+                    <div
+                      style={{
+                        width: 42,
+                        height: 42,
+                        borderRadius: "50%",
+                        background: active ? color : "#dee2e6",
+                        color: "#fff",
+                        display: "flex",
+                        alignItems: "center",
+                        justifyContent: "center",
+                        margin: "0 auto 10px",
+                        fontSize: "20px",
+                        boxShadow: active
+                          ? `0 0 10px ${color}80`
+                          : "inset 0 0 3px rgba(0,0,0,0.1)",
+                        transition: "all 0.3s ease",
+                      }}
+                    >
+                      <Icon size={20} />
+                    </div>
+                    <div
+                      style={{
+                        fontSize: "0.9rem",
+                        fontWeight: active ? 600 : 500,
+                      }}
+                    >
+                      {label}
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
           </div>
         </div>
 
@@ -259,6 +268,16 @@ function OrderSuccessPage() {
           </Link>
         </div>
       </div>
+
+      <style>{`
+        @keyframes progressGlow {
+          0% { box-shadow: 0 0 0px rgba(0,0,0,0); }
+          100% { box-shadow: 0 0 10px rgba(13,110,253,0.4); }
+        }
+        .progress-active {
+          animation: progressGlow 1s ease-in-out infinite alternate;
+        }
+      `}</style>
     </div>
   );
 }
