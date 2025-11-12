@@ -2,7 +2,7 @@ import React, { useEffect, useState, useRef } from "react";
 import { useParams, useNavigate, useSearchParams } from "react-router-dom";
 import { orderAPI, paymentAPI } from "../services/api";
 import { useCart } from "../context/CartContext";
-import { ToastContainer, toast } from "react-toastify";
+import { toast, ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 import Loader from "./Loader";
 
@@ -19,7 +19,6 @@ function PaymentPage() {
   const [error, setError] = useState("");
   const [qrCode, setQrCode] = useState(null);
   const [method, setMethod] = useState(initialMethod);
-  const [paymentId, setPaymentId] = useState(null);
   const [cardDetails, setCardDetails] = useState({
     number: "",
     expiry: "",
@@ -71,15 +70,12 @@ function PaymentPage() {
         ...(method === "card" ? { cardDetails } : {}),
       };
       const { data } = await paymentAPI.initiate(payload);
-      setPaymentId(data.paymentId);
-
       if (method === "qr") {
         setQrCode(data.qrCodeUrl);
         startPolling();
       }
-    } catch (err) {
+    } catch {
       toast.error("Payment initiation failed");
-      setError(err.response?.data?.message || "Failed to initiate payment");
     } finally {
       setLoading(false);
     }
@@ -92,58 +88,22 @@ function PaymentPage() {
     setLoading(true);
     try {
       const res = await paymentAPI.confirm(orderId);
-
       if (res?.data?.success) {
         clearCart();
 
-        // Show Success Animation Overlay
-        const overlay = document.createElement("div");
-        overlay.innerHTML = `
-          <div id="success-overlay" style="
-            position: fixed; inset: 0;
-            display: flex; justify-content: center; align-items: center;
-            background: rgba(255,255,255,0.95);
-            z-index: 9999;
-            flex-direction: column;
-            font-family: sans-serif;
-            animation: fadeIn 0.3s ease-in;
-          ">
-            <div style="
-              width: 120px; height: 120px;
-              background: #28a745;
-              border-radius: 50%;
-              display: grid; place-items: center;
-              animation: popIn 0.5s ease-out;
-              box-shadow: 0 6px 25px rgba(40,167,69,0.25);
-            ">
-              <svg viewBox="0 0 52 52" width="58" height="58">
-                <circle cx="26" cy="26" r="24" fill="transparent" stroke="rgba(255,255,255,0.2)" strokeWidth="2"/>
-                <path d="M14 27 L22.5 35 L38 18"
-                  fill="transparent" stroke="#fff" strokeWidth="5" strokeLinecap="round" strokeLinejoin="round"
-                  style="stroke-dasharray: 1000; stroke-dashoffset: 1000; animation: draw 0.8s ease forwards 0.2s;"
-                />
-              </svg>
-            </div>
-            <h3 style="margin-top: 20px; color: #222;">Payment Successful!</h3>
-            <p style="color: #555;">Your order has been placed successfully.</p>
-          </div>
-          <style>
-            @keyframes draw { to { stroke-dashoffset: 0; } }
-            @keyframes fadeIn { from {opacity: 0;} to {opacity: 1;} }
-            @keyframes popIn { 0% {transform: scale(0);} 70% {transform: scale(1.1);} 100% {transform: scale(1);} }
-          </style>
-        `;
-        document.body.appendChild(overlay);
-
-        // Redirect after animation
-        setTimeout(() => {
-          document.getElementById("success-overlay")?.remove();
+        // COD → simple toast success
+        if (method === "cod") {
+          toast.success("Order placed successfully! Pay on delivery.");
           navigate(`/order-success/${orderId}`);
-        }, 2500);
+          return;
+        }
+
+        // QR / CARD → modern success animation overlay
+        showSuccessOverlay();
       } else {
         toast.error("Payment confirmation failed");
       }
-    } catch (err) {
+    } catch {
       toast.error("Payment confirmation failed");
     } finally {
       setLoading(false);
@@ -156,15 +116,63 @@ function PaymentPage() {
       try {
         const { data } = await paymentAPI.verify(orderId);
         if (data.status === "paid") {
-          toast.success("Payment verified successfully!");
           clearCart();
           clearInterval(pollingRef.current);
-          navigate(`/order-success/${orderId}`);
+          showSuccessOverlay();
         }
       } catch (err) {
         console.error("Polling error:", err.message);
       }
     }, 5000);
+  };
+
+  // ===== MODERN SUCCESS OVERLAY =====
+  const showSuccessOverlay = () => {
+    const overlay = document.createElement("div");
+    overlay.innerHTML = `
+      <div id="success-overlay" style="
+        position: fixed; inset: 0;
+        display: flex; flex-direction: column;
+        justify-content: center; align-items: center;
+        background: linear-gradient(135deg, #e3ffe7 0%, #d9e7ff 100%);
+        z-index: 9999; font-family: 'Poppins', sans-serif;
+        animation: fadeIn 0.3s ease-in-out;
+      ">
+        <div style="
+          width: 140px; height: 140px;
+          background: radial-gradient(circle at 30% 30%, #4ade80, #16a34a);
+          border-radius: 50%; display: flex;
+          justify-content: center; align-items: center;
+          box-shadow: 0 10px 40px rgba(22,163,74,0.25);
+          animation: popIn 0.5s ease-out;
+        ">
+          <svg viewBox="0 0 52 52" width="64" height="64">
+            <circle cx="26" cy="26" r="25" fill="transparent" stroke="rgba(255,255,255,0.4)" strokeWidth="2"/>
+            <path d="M14 27 L22.5 35 L38 18"
+              fill="transparent" stroke="#fff" strokeWidth="5" strokeLinecap="round" strokeLinejoin="round"
+              style="stroke-dasharray: 100; stroke-dashoffset: 100; animation: draw 0.6s ease forwards 0.4s;"
+            />
+          </svg>
+        </div>
+        <h2 style="margin-top: 25px; font-weight: 600; color: #111;">Payment Successful</h2>
+        <p style="color: #444; margin-top: 5px;">Redirecting to order details...</p>
+      </div>
+
+      <style>
+        @keyframes draw { to { stroke-dashoffset: 0; } }
+        @keyframes fadeIn { from {opacity: 0;} to {opacity: 1;} }
+        @keyframes popIn {
+          0% { transform: scale(0); opacity: 0; }
+          70% { transform: scale(1.1); opacity: 1; }
+          100% { transform: scale(1); }
+        }
+      </style>
+    `;
+    document.body.appendChild(overlay);
+    setTimeout(() => {
+      document.getElementById("success-overlay")?.remove();
+      navigate(`/order-success/${orderId}`);
+    }, 2800);
   };
 
   if (!order) return <Loader />;
@@ -321,6 +329,13 @@ function PaymentPage() {
         <div className="alert alert-info mt-4 text-center rounded-3 shadow-sm">
           <strong>Cash on Delivery:</strong> Please pay the amount to the
           delivery partner when you receive your order.
+          <button
+            className="btn btn-success mt-3 px-4"
+            onClick={handleConfirmPayment}
+            disabled={loading}
+          >
+            Confirm Order
+          </button>
         </div>
       )}
     </div>

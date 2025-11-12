@@ -62,7 +62,6 @@ function ProductCard({ product }) {
       addToCart(product._id, 1)
         .then(() => {
           sessionStorage.setItem("cartAnimation", product.name);
-          navigate("/cart");
         })
         .catch(() => toast.error("Failed to add to cart"));
     }, 850);

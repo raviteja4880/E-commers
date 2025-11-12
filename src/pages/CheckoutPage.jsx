@@ -84,7 +84,6 @@ function CheckoutPage() {
         clearCart();
       }
 
-      toast.success("Order placed successfully!");
     } catch (err) {
       toast.error(err.response?.data?.message || "Order failed");
     } finally {
