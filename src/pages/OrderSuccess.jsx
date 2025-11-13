@@ -2,7 +2,7 @@ import React, { useEffect, useState } from "react";
 import { useParams, Link } from "react-router-dom";
 import { orderAPI } from "../services/api";
 import Loader from "./Loader";
-import { ShoppingCart, Package, MapPin, Truck, CheckCircle } from "lucide-react";
+import { ShoppingCart, Package, MapPin, CheckCircle } from "lucide-react";
 
 // Reusable Rupee formatter
 const Rupee = ({ value, size = "1rem", bold = false, color = "#000" }) => (
@@ -45,18 +45,32 @@ function OrderSuccessPage() {
     { label: "Delivered", icon: CheckCircle },
   ];
 
+  // Fetch order with auto-refresh
   useEffect(() => {
+    let interval;
+
     const fetchOrder = async () => {
       try {
         const { data } = await orderAPI.getById(orderId);
         setOrder(data);
+
+        // Stop polling after final stage: delivered
+        if (data.isDelivered) {
+          clearInterval(interval);
+        }
       } catch (err) {
         setError(err.response?.data?.message || "Failed to load order");
       } finally {
         setLoading(false);
       }
     };
+
     fetchOrder();
+
+    // Polling every 3 seconds until delivered
+    interval = setInterval(fetchOrder, 3000);
+
+    return () => clearInterval(interval);
   }, [orderId]);
 
   if (loading) return <Loader />;
@@ -68,14 +82,14 @@ function OrderSuccessPage() {
   // Track delivery progress from backend
   let stage = order.deliveryStage || 1;
 
-  // Freeze at stage 3 when delayed
+  // Freeze at stage 3 for delayed orders
   if (order.delayMessage && stage < 4) {
     stage = 3;
   }
 
   const stageIndex = stage - 1;
 
-  // Expected date (from backend)
+  // Expected date
   const expected = order.expectedDeliveryDate
     ? new Date(order.expectedDeliveryDate).toLocaleDateString("en-IN", {
         day: "numeric",
@@ -95,10 +109,12 @@ function OrderSuccessPage() {
             <p>
               <strong>Order ID:</strong> {order._id}
             </p>
+
             <p>
               <strong>Payment Method:</strong>{" "}
               {order.paymentMethod?.toUpperCase()}
             </p>
+
             <p>
               <strong>Status:</strong>{" "}
               <span
@@ -110,22 +126,18 @@ function OrderSuccessPage() {
                 {order.isPaid ? "Paid" : "Pending"}
               </span>
             </p>
+
             <p>
               <strong>Total:</strong>{" "}
               <Rupee value={order.totalPrice} bold size="1.05rem" />
             </p>
 
-            <p>
-              <strong>Expected Delivery:</strong> {expected}
-            </p>
-
-            {order.delayMessage && (
-              <p style={{ color: "#dc3545", fontWeight: 600 }}>
-                ⚠ Your order may be delayed
+            {/* DELIVERY DATE */}
+            {!order.isDelivered ? (
+              <p>
+                <strong>Expected Delivery:</strong> {expected}
               </p>
-            )}
-
-            {order.isDelivered && (
+            ) : (
               <p style={{ color: "#28a745", fontWeight: 600 }}>
                 Delivered on{" "}
                 {new Date(order.deliveredAt).toLocaleDateString("en-IN", {
@@ -133,6 +145,13 @@ function OrderSuccessPage() {
                   month: "short",
                   year: "numeric",
                 })}
+              </p>
+            )}
+
+            {/* DELAY MESSAGE */}
+            {order.delayMessage && !order.isDelivered && (
+              <p style={{ color: "#dc3545", fontWeight: 600 }}>
+                ⚠ Your order may be delayed
               </p>
             )}
           </div>
@@ -147,19 +166,17 @@ function OrderSuccessPage() {
                   className="d-flex align-items-center justify-content-between border-bottom py-2"
                 >
                   <div className="d-flex align-items-center gap-2">
-                    {item.image && (
-                      <img
-                        src={item.image}
-                        alt={item.name}
-                        style={{
-                          width: 50,
-                          height: 50,
-                          borderRadius: 6,
-                          objectFit: "cover",
-                          border: "1px solid #ddd",
-                        }}
-                      />
-                    )}
+                    <img
+                      src={item.image}
+                      alt={item.name}
+                      style={{
+                        width: 50,
+                        height: 50,
+                        borderRadius: 6,
+                        objectFit: "cover",
+                        border: "1px solid #ddd",
+                      }}
+                    />
                     <span className="fw-medium">
                       {item.name} × {item.qty}
                     </span>
@@ -196,7 +213,7 @@ function OrderSuccessPage() {
                 top: "35%",
                 left: "10%",
                 height: 5,
-                width: `${(stageIndex / (stages.length - 1)) * 80}%`,
+                width: `${(stageIndex / (stages.length - 1)) * 100}%`,
                 background: order.isDelivered ? "#28a745" : "#0d6efd",
                 borderRadius: 5,
                 transition: "width 0.8s ease-in-out",
