@@ -2,13 +2,7 @@ import React, { useEffect, useState } from "react";
 import { useParams, Link } from "react-router-dom";
 import { orderAPI } from "../services/api";
 import Loader from "./Loader";
-import {
-  ShoppingCart,
-  Package,
-  Truck,
-  MapPin,
-  CheckCircle,
-} from "lucide-react";
+import { ShoppingCart, Package, MapPin, Truck, CheckCircle } from "lucide-react";
 
 // Reusable Rupee formatter
 const Rupee = ({ value, size = "1rem", bold = false, color = "#000" }) => (
@@ -42,13 +36,11 @@ function OrderSuccessPage() {
   const [order, setOrder] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
-  const [progressStage, setProgressStage] = useState(1);
-  const [expectedDate, setExpectedDate] = useState("");
 
+  // Stages same as backend
   const stages = [
     { label: "Order Placed", icon: ShoppingCart },
     { label: "Packed", icon: Package },
-    { label: "Shipped", icon: Truck },
     { label: "Out for Delivery", icon: MapPin },
     { label: "Delivered", icon: CheckCircle },
   ];
@@ -58,24 +50,6 @@ function OrderSuccessPage() {
       try {
         const { data } = await orderAPI.getById(orderId);
         setOrder(data);
-
-        // Expected delivery = 5 days from order creation
-        const expected = new Date(data.createdAt);
-        expected.setDate(expected.getDate() + 5);
-        setExpectedDate(
-          expected.toLocaleDateString("en-IN", {
-            day: "numeric",
-            month: "short",
-            year: "numeric",
-          })
-        );
-
-        // Calculate progress (5-day flow)
-        const orderDate = new Date(data.createdAt);
-        const now = new Date();
-        const diffDays = Math.floor((now - orderDate) / (1000 * 60 * 60 * 24));
-        if (data.isDelivered) setProgressStage(stages.length);
-        else setProgressStage(Math.min(diffDays + 1, stages.length - 1));
       } catch (err) {
         setError(err.response?.data?.message || "Failed to load order");
       } finally {
@@ -90,6 +64,25 @@ function OrderSuccessPage() {
     return <p className="text-center mt-5 text-danger fw-semibold">{error}</p>;
   if (!order)
     return <p className="text-center mt-5 text-muted">Order not found.</p>;
+
+  // Track delivery progress from backend
+  let stage = order.deliveryStage || 1;
+
+  // Freeze at stage 3 when delayed
+  if (order.delayMessage && stage < 4) {
+    stage = 3;
+  }
+
+  const stageIndex = stage - 1;
+
+  // Expected date (from backend)
+  const expected = order.expectedDeliveryDate
+    ? new Date(order.expectedDeliveryDate).toLocaleDateString("en-IN", {
+        day: "numeric",
+        month: "short",
+        year: "numeric",
+      })
+    : "N/A";
 
   return (
     <div className="container py-4" style={{ maxWidth: "960px" }}>
@@ -121,9 +114,17 @@ function OrderSuccessPage() {
               <strong>Total:</strong>{" "}
               <Rupee value={order.totalPrice} bold size="1.05rem" />
             </p>
+
             <p>
-              <strong>Expected Delivery:</strong> {expectedDate}
+              <strong>Expected Delivery:</strong> {expected}
             </p>
+
+            {order.delayMessage && (
+              <p style={{ color: "#dc3545", fontWeight: 600 }}>
+                ⚠ Your order may be delayed
+              </p>
+            )}
+
             {order.isDelivered && (
               <p style={{ color: "#28a745", fontWeight: 600 }}>
                 Delivered on{" "}
@@ -173,6 +174,7 @@ function OrderSuccessPage() {
         {/* DELIVERY TRACKING */}
         <div className="mt-5">
           <h5 className="fw-semibold mb-3">Delivery Tracking</h5>
+
           <div className="position-relative" style={{ padding: "30px 0 20px" }}>
             {/* Line background */}
             <div
@@ -194,10 +196,7 @@ function OrderSuccessPage() {
                 top: "35%",
                 left: "10%",
                 height: 5,
-                width:
-                  progressStage >= stages.length
-                    ? "80%"
-                    : `${((progressStage - 1) / (stages.length - 1)) * 80}%`,
+                width: `${(stageIndex / (stages.length - 1)) * 80}%`,
                 background: order.isDelivered ? "#28a745" : "#0d6efd",
                 borderRadius: 5,
                 transition: "width 0.8s ease-in-out",
@@ -210,7 +209,7 @@ function OrderSuccessPage() {
               style={{ position: "relative", zIndex: 2 }}
             >
               {stages.map(({ label, icon: Icon }, index) => {
-                const active = index + 1 <= progressStage;
+                const active = index <= stageIndex;
                 const color = active
                   ? order.isDelivered
                     ? "#28a745"
@@ -268,16 +267,6 @@ function OrderSuccessPage() {
           </Link>
         </div>
       </div>
-
-      <style>{`
-        @keyframes progressGlow {
-          0% { box-shadow: 0 0 0px rgba(0,0,0,0); }
-          100% { box-shadow: 0 0 10px rgba(13,110,253,0.4); }
-        }
-        .progress-active {
-          animation: progressGlow 1s ease-in-out infinite alternate;
-        }
-      `}</style>
     </div>
   );
 }

@@ -4,8 +4,8 @@ import {
   Routes,
   Route,
   useLocation,
-  Navigate,
 } from "react-router-dom";
+
 import Navbar from "./pages/Navbar";
 import Home from "./pages/Home";
 import Cart from "./pages/Cart";
@@ -21,11 +21,10 @@ import MyOrdersPage from "./pages/MyOrdersPage";
 import { ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 
-// Wrapper to conditionally show Navbar
+import ProtectedRoute from "./components/ProtectedRoute";
+
 function Layout({ children }) {
   const location = useLocation();
-
-  // hide Navbar on login & register
   const hideNavbar =
     location.pathname === "/login" || location.pathname === "/register";
 
@@ -38,22 +37,64 @@ function Layout({ children }) {
 }
 
 function App() {
-  const userInfo = localStorage.getItem("userInfo");
-
   return (
     <CartProvider>
       <Router>
         <Layout>
           <Routes>
             <Route path="/" element={<Home />} />
-            <Route path="/cart" element={<Cart />} />
-            <Route path="/order-success/:orderId" element={<OrderSuccess />} />
-            <Route path="/profile" element={<ProfilePage />} />
-            <Route path="/login" element={<Login />} />
-            <Route path="/my-orders" element={<MyOrdersPage />} />
             <Route path="/product/:id" element={<ProductDetails />} />
-            <Route path="/payment/:orderId" element={<PaymentPage />} />
-            <Route path="/checkout" element={<CheckoutPage />} />
+            <Route path="/login" element={<Login />} />
+
+            {/* Protected Routes */}
+            <Route
+              path="/cart"
+              element={
+                <ProtectedRoute>
+                  <Cart />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/checkout"
+              element={
+                <ProtectedRoute>
+                  <CheckoutPage />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/payment/:orderId"
+              element={
+                <ProtectedRoute>
+                  <PaymentPage />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/order-success/:orderId"
+              element={
+                <ProtectedRoute>
+                  <OrderSuccess />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/profile"
+              element={
+                <ProtectedRoute>
+                  <ProfilePage />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/my-orders"
+              element={
+                <ProtectedRoute>
+                  <MyOrdersPage />
+                </ProtectedRoute>
+              }
+            />
           </Routes>
         </Layout>
 
