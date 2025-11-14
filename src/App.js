@@ -11,7 +11,7 @@ import Home from "./pages/Home";
 import Cart from "./pages/Cart";
 import Login from "./pages/Login";
 import CheckoutPage from "./pages/CheckoutPage";
-import OrderSuccess from "./pages/OrderSuccess";
+import OrderDetails from "./pages/OrderDetails";
 import { CartProvider } from "./context/CartContext";
 import ProductDetails from "./pages/ProductDetails";
 import PaymentPage from "./pages/PaymentPage";
@@ -75,7 +75,7 @@ function App() {
               path="/order-success/:orderId"
               element={
                 <ProtectedRoute>
-                  <OrderSuccess />
+                  <OrderDetails />
                 </ProtectedRoute>
               }
             />

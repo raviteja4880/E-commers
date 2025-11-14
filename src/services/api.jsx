@@ -55,6 +55,7 @@ export const orderAPI = {
   getById: (id) => API.get(`/orders/${id}`),
   pay: (id, paymentResult) => API.put(`/orders/${id}/pay`, paymentResult),
   verifyPayment: (id) => API.get(`/orders/${id}/verify-payment`),
+  cancelOrder: (id, data) => API.put(`/orders/${id}/cancel`, data),
 };
 
 // ================= PAYMENT API =================

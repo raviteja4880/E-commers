@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from "react";
 import { useParams, Link } from "react-router-dom";
 import { orderAPI } from "../services/api";
-import Loader from "./Loader";
+import Loader from "../pages/Loader";
 import {
   ShoppingCart,
   Package,
@@ -45,6 +45,12 @@ function OrderSuccessPage() {
   const [progressStage, setProgressStage] = useState(1);
   const [expectedDate, setExpectedDate] = useState("");
 
+  // Cancel modal state
+  const [showCancelModal, setShowCancelModal] = useState(false);
+  const [cancelReason, setCancelReason] = useState("");
+  const [customReason, setCustomReason] = useState("");
+  const [submittingCancel, setSubmittingCancel] = useState(false);
+
   const stages = [
     { label: "Order Placed", icon: ShoppingCart },
     { label: "Packed", icon: Package },
@@ -56,13 +62,14 @@ function OrderSuccessPage() {
   useEffect(() => {
     const fetchOrder = async () => {
       try {
+        setLoading(true);
         const { data } = await orderAPI.getById(orderId);
         setOrder(data);
 
-        // Use backend date instead of recalculating
+        // Expected Delivery
         const expected = data.expectedDeliveryDate
           ? new Date(data.expectedDeliveryDate)
-          : new Date(data.createdAt);
+          : new Date(data.createdAt || Date.now());
 
         setExpectedDate(
           expected.toLocaleDateString("en-IN", {
@@ -72,11 +79,10 @@ function OrderSuccessPage() {
           })
         );
 
-        // Backend deliveryStage controls progress
-        if (data.isDelivered) {
-          setProgressStage(5); // delivered
-        } else {
-          // Map backend 1–4 to FE 1–5
+        // Progress Logic
+        if (data.isCanceled) setProgressStage(0);
+        else if (data.isDelivered) setProgressStage(5);
+        else {
           const backendStage = data.deliveryStage || 1;
           const frontendStage = backendStage === 4 ? 5 : backendStage;
           setProgressStage(frontendStage);
@@ -90,11 +96,50 @@ function OrderSuccessPage() {
     fetchOrder();
   }, [orderId]);
 
+  const handleConfirmCancel = async () => {
+    const finalReason =
+      cancelReason === "Other" ? customReason.trim() : cancelReason;
+
+    if (!finalReason) {
+      alert("Please select or enter a reason for cancellation.");
+      return;
+    }
+
+    try {
+      setSubmittingCancel(true);
+      const { data } = await orderAPI.cancelOrder(order._id, {
+        reason: finalReason,
+      });
+
+      setOrder(data.order || data);
+      setShowCancelModal(false);
+      setProgressStage(0);
+      alert("Order cancelled successfully");
+    } catch (err) {
+      alert(err.response?.data?.message || "Failed to cancel order");
+    } finally {
+      setSubmittingCancel(false);
+    }
+  };
+
   if (loading) return <Loader />;
   if (error)
     return <p className="text-center mt-5 text-danger fw-semibold">{error}</p>;
   if (!order)
     return <p className="text-center mt-5 text-muted">Order not found.</p>;
+
+  const progressWidth =
+    progressStage === 0
+      ? "0%"
+      : progressStage >= stages.length
+      ? "80%"
+      : `${((progressStage - 1) / (stages.length - 1)) * 80}%`;
+
+  const progressColor = order.isCanceled
+    ? "#dc3545"
+    : order.isDelivered
+    ? "#28a745"
+    : "#0d6efd";
 
   return (
     <div className="container py-4" style={{ maxWidth: "960px" }}>
@@ -115,20 +160,35 @@ function OrderSuccessPage() {
               <strong>Status:</strong>{" "}
               <span
                 style={{
-                  color: order.isPaid ? "#28a745" : "#f0ad4e",
+                  color: order.isCanceled
+                    ? "#dc3545"
+                    : order.isDelivered
+                    ? "#28a745"
+                    : order.isPaid
+                    ? "#28a745"
+                    : "#f0ad4e",
                   fontWeight: 600,
                 }}
               >
-                {order.isPaid ? "Paid" : "Pending"}
+                {order.isCanceled
+                  ? "Cancelled"
+                  : order.isDelivered
+                  ? "Delivered"
+                  : order.isPaid
+                  ? "Paid"
+                  : "Pending"}
               </span>
             </p>
+
             <p>
               <strong>Total:</strong>{" "}
               <Rupee value={order.totalPrice} bold size="1.05rem" />
             </p>
+
             <p>
               <strong>Expected Delivery:</strong> {expectedDate}
             </p>
+
             {order.isDelivered && (
               <p style={{ color: "#28a745", fontWeight: 600 }}>
                 Delivered on{" "}
@@ -138,6 +198,23 @@ function OrderSuccessPage() {
                   year: "numeric",
                 })}
               </p>
+            )}
+
+            {order.isCanceled && (
+              <div style={{ color: "#dc3545", fontWeight: 600 }}>
+                <p>
+                  <strong>Cancelled on:</strong>{" "}
+                  {new Date(order.canceledAt).toLocaleDateString("en-IN", {
+                    day: "numeric",
+                    month: "short",
+                    year: "numeric",
+                  })}
+                </p>
+                <p>
+                  <strong>Reason:</strong>{" "}
+                  {order.cancelReason || "Not provided"}
+                </p>
+              </div>
             )}
           </div>
 
@@ -178,50 +255,45 @@ function OrderSuccessPage() {
         {/* DELIVERY TRACKING */}
         <div className="mt-5">
           <h5 className="fw-semibold mb-3">Delivery Tracking</h5>
-          <div className="position-relative" style={{ padding: "30px 0 20px" }}>
-            {/* Line background */}
+
+          <div className="position-relative" style={{ padding: "40px 0 20px" }}>
+            {/* Background line */}
             <div
               style={{
                 position: "absolute",
-                top: "35%",
+                top: "45%",
                 left: "10%",
                 right: "10%",
-                height: 5,
+                height: "4px",
                 background: "#e9ecef",
                 borderRadius: 5,
+                transform: "translateY(-50%)",
               }}
-            ></div>
+            />
 
             {/* Progress line */}
             <div
               style={{
                 position: "absolute",
-                top: "35%",
+                top: "50%",
                 left: "10%",
-                height: 5,
-                width:
-                  progressStage >= stages.length
-                    ? "80%"
-                    : `${((progressStage - 1) / (stages.length - 1)) * 80}%`,
-                background: order.isDelivered ? "#28a745" : "#0d6efd",
+                width: progressWidth,
+                height: "4px",
+                background: progressColor,
                 borderRadius: 5,
-                transition: "width 0.8s ease-in-out",
+                transform: "translateY(-50%)",
+                transition: "width 0.6s ease-in-out",
               }}
-            ></div>
+            />
 
-            {/* Stage icons */}
+            {/* Stage Icons */}
             <div
               className="d-flex justify-content-between"
               style={{ position: "relative", zIndex: 2 }}
             >
               {stages.map(({ label, icon: Icon }, index) => {
-                const active = index + 1 <= progressStage;
-                const color = active
-                  ? order.isDelivered
-                    ? "#28a745"
-                    : "#0d6efd"
-                  : "#adb5bd";
-
+                const active = !order.isCanceled && index + 1 <= progressStage;
+                const color = active ? progressColor : "#adb5bd";
                 return (
                   <div
                     key={label}
@@ -263,26 +335,109 @@ function OrderSuccessPage() {
                 );
               })}
             </div>
+
+            {/* Cancelled Badge */}
+            {order.isCanceled && (
+              <div
+                style={{
+                  position: "absolute",
+                  right: "12%",
+                  top: "-10px",
+                  background: "#dc3545",
+                  color: "#fff",
+                  padding: "4px 8px",
+                  borderRadius: 6,
+                  fontWeight: 600,
+                  fontSize: "0.8rem",
+                }}
+              >
+                Cancelled
+              </div>
+            )}
           </div>
         </div>
 
-        {/* BUTTON */}
-        <div className="mt-4 text-center">
-          <Link to="/" className="btn btn-primary px-4 fw-semibold rounded-3">
+        {/* ACTION BUTTONS */}
+        <div className="text-center mt-4">
+          {!order.isDelivered && !order.isCanceled && (
+            <button
+              className="btn btn-outline-danger fw-semibold px-4 py-2 mx-2"
+              style={{ minWidth: "160px" }}
+              onClick={() => setShowCancelModal(true)}
+            >
+              Cancel Order
+            </button>
+          )}
+
+          <Link
+            to="/"
+            className="btn btn-primary fw-semibold px-4 py-2 mx-2"
+            style={{ minWidth: "160px" }}
+          >
             Back to Home
           </Link>
         </div>
       </div>
 
-      <style>{`
-        @keyframes progressGlow {
-          0% { box-shadow: 0 0 0px rgba(0,0,0,0); }
-          100% { box-shadow: 0 0 10px rgba(13,110,253,0.4); }
-        }
-        .progress-active {
-          animation: progressGlow 1s ease-in-out infinite alternate;
-        }
-      `}</style>
+      {/* CANCEL MODAL */}
+      {showCancelModal && (
+        <div
+          className="position-fixed top-0 start-0 w-100 h-100 d-flex justify-content-center align-items-center"
+          style={{ background: "rgba(0,0,0,0.4)", zIndex: 9999 }}
+        >
+          <div className="bg-white p-4 rounded-3 shadow-lg" style={{ width: "420px" }}>
+            <h5 className="fw-bold text-center mb-3">Cancel Order</h5>
+
+            <p className="text-muted">Choose a reason for cancellation:</p>
+
+            <div className="d-flex flex-column gap-2">
+              {[
+                "Ordered by mistake",
+                "Found cheaper elsewhere",
+                "Product is no longer needed",
+                "Expected delivery time is too long",
+                "Other",
+              ].map((reason) => (
+                <label key={reason} className="d-flex align-items-center">
+                  <input
+                    type="radio"
+                    className="form-check-input me-2"
+                    name="cancelReason"
+                    value={reason}
+                    onChange={(e) => setCancelReason(e.target.value)}
+                    checked={cancelReason === reason}
+                  />
+                  {reason}
+                </label>
+              ))}
+            </div>
+
+            {cancelReason === "Other" && (
+              <textarea
+                className="form-control mt-3"
+                rows="3"
+                placeholder="Write your reason..."
+                value={customReason}
+                onChange={(e) => setCustomReason(e.target.value)}
+              />
+            )}
+
+            <div className="d-flex justify-content-end gap-2 mt-4">
+              <button className="btn btn-secondary" onClick={() => setShowCancelModal(false)}>
+                Close
+              </button>
+
+              <button
+                className="btn btn-danger"
+                disabled={submittingCancel}
+                onClick={handleConfirmCancel}
+              >
+                {submittingCancel ? "Please wait..." : "Confirm Cancel"}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
