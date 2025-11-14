@@ -2,7 +2,13 @@ import React, { useEffect, useState } from "react";
 import { useParams, Link } from "react-router-dom";
 import { orderAPI } from "../services/api";
 import Loader from "./Loader";
-import { ShoppingCart, Package, MapPin, CheckCircle } from "lucide-react";
+import {
+  ShoppingCart,
+  Package,
+  Truck,
+  MapPin,
+  CheckCircle,
+} from "lucide-react";
 
 // Reusable Rupee formatter
 const Rupee = ({ value, size = "1rem", bold = false, color = "#000" }) => (
@@ -36,27 +42,44 @@ function OrderSuccessPage() {
   const [order, setOrder] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
+  const [progressStage, setProgressStage] = useState(1);
+  const [expectedDate, setExpectedDate] = useState("");
 
-  // Stages same as backend
   const stages = [
     { label: "Order Placed", icon: ShoppingCart },
     { label: "Packed", icon: Package },
+    { label: "Shipped", icon: Truck },
     { label: "Out for Delivery", icon: MapPin },
     { label: "Delivered", icon: CheckCircle },
   ];
 
-  // Fetch order with auto-refresh
   useEffect(() => {
-    let interval;
-
     const fetchOrder = async () => {
       try {
         const { data } = await orderAPI.getById(orderId);
         setOrder(data);
 
-        // Stop polling after final stage: delivered
+        // Use backend date instead of recalculating
+        const expected = data.expectedDeliveryDate
+          ? new Date(data.expectedDeliveryDate)
+          : new Date(data.createdAt);
+
+        setExpectedDate(
+          expected.toLocaleDateString("en-IN", {
+            day: "numeric",
+            month: "short",
+            year: "numeric",
+          })
+        );
+
+        // Backend deliveryStage controls progress
         if (data.isDelivered) {
-          clearInterval(interval);
+          setProgressStage(5); // delivered
+        } else {
+          // Map backend 1–4 to FE 1–5
+          const backendStage = data.deliveryStage || 1;
+          const frontendStage = backendStage === 4 ? 5 : backendStage;
+          setProgressStage(frontendStage);
         }
       } catch (err) {
         setError(err.response?.data?.message || "Failed to load order");
@@ -64,13 +87,7 @@ function OrderSuccessPage() {
         setLoading(false);
       }
     };
-
     fetchOrder();
-
-    // Polling every 3 seconds until delivered
-    interval = setInterval(fetchOrder, 3000);
-
-    return () => clearInterval(interval);
   }, [orderId]);
 
   if (loading) return <Loader />;
@@ -78,25 +95,6 @@ function OrderSuccessPage() {
     return <p className="text-center mt-5 text-danger fw-semibold">{error}</p>;
   if (!order)
     return <p className="text-center mt-5 text-muted">Order not found.</p>;
-
-  // Track delivery progress from backend
-  let stage = order.deliveryStage || 1;
-
-  // Freeze at stage 3 for delayed orders
-  if (order.delayMessage && stage < 4) {
-    stage = 3;
-  }
-
-  const stageIndex = stage - 1;
-
-  // Expected date
-  const expected = order.expectedDeliveryDate
-    ? new Date(order.expectedDeliveryDate).toLocaleDateString("en-IN", {
-        day: "numeric",
-        month: "short",
-        year: "numeric",
-      })
-    : "N/A";
 
   return (
     <div className="container py-4" style={{ maxWidth: "960px" }}>
@@ -109,12 +107,10 @@ function OrderSuccessPage() {
             <p>
               <strong>Order ID:</strong> {order._id}
             </p>
-
             <p>
               <strong>Payment Method:</strong>{" "}
               {order.paymentMethod?.toUpperCase()}
             </p>
-
             <p>
               <strong>Status:</strong>{" "}
               <span
@@ -126,18 +122,14 @@ function OrderSuccessPage() {
                 {order.isPaid ? "Paid" : "Pending"}
               </span>
             </p>
-
             <p>
               <strong>Total:</strong>{" "}
               <Rupee value={order.totalPrice} bold size="1.05rem" />
             </p>
-
-            {/* DELIVERY DATE */}
-            {!order.isDelivered ? (
-              <p>
-                <strong>Expected Delivery:</strong> {expected}
-              </p>
-            ) : (
+            <p>
+              <strong>Expected Delivery:</strong> {expectedDate}
+            </p>
+            {order.isDelivered && (
               <p style={{ color: "#28a745", fontWeight: 600 }}>
                 Delivered on{" "}
                 {new Date(order.deliveredAt).toLocaleDateString("en-IN", {
@@ -145,13 +137,6 @@ function OrderSuccessPage() {
                   month: "short",
                   year: "numeric",
                 })}
-              </p>
-            )}
-
-            {/* DELAY MESSAGE */}
-            {order.delayMessage && !order.isDelivered && (
-              <p style={{ color: "#dc3545", fontWeight: 600 }}>
-                ⚠ Your order may be delayed
               </p>
             )}
           </div>
@@ -166,17 +151,19 @@ function OrderSuccessPage() {
                   className="d-flex align-items-center justify-content-between border-bottom py-2"
                 >
                   <div className="d-flex align-items-center gap-2">
-                    <img
-                      src={item.image}
-                      alt={item.name}
-                      style={{
-                        width: 50,
-                        height: 50,
-                        borderRadius: 6,
-                        objectFit: "cover",
-                        border: "1px solid #ddd",
-                      }}
-                    />
+                    {item.image && (
+                      <img
+                        src={item.image}
+                        alt={item.name}
+                        style={{
+                          width: 50,
+                          height: 50,
+                          borderRadius: 6,
+                          objectFit: "cover",
+                          border: "1px solid #ddd",
+                        }}
+                      />
+                    )}
                     <span className="fw-medium">
                       {item.name} × {item.qty}
                     </span>
@@ -191,7 +178,6 @@ function OrderSuccessPage() {
         {/* DELIVERY TRACKING */}
         <div className="mt-5">
           <h5 className="fw-semibold mb-3">Delivery Tracking</h5>
-
           <div className="position-relative" style={{ padding: "30px 0 20px" }}>
             {/* Line background */}
             <div
@@ -213,7 +199,10 @@ function OrderSuccessPage() {
                 top: "35%",
                 left: "10%",
                 height: 5,
-                width: `${(stageIndex / (stages.length - 1)) * 100}%`,
+                width:
+                  progressStage >= stages.length
+                    ? "80%"
+                    : `${((progressStage - 1) / (stages.length - 1)) * 80}%`,
                 background: order.isDelivered ? "#28a745" : "#0d6efd",
                 borderRadius: 5,
                 transition: "width 0.8s ease-in-out",
@@ -226,7 +215,7 @@ function OrderSuccessPage() {
               style={{ position: "relative", zIndex: 2 }}
             >
               {stages.map(({ label, icon: Icon }, index) => {
-                const active = index <= stageIndex;
+                const active = index + 1 <= progressStage;
                 const color = active
                   ? order.isDelivered
                     ? "#28a745"
@@ -284,6 +273,16 @@ function OrderSuccessPage() {
           </Link>
         </div>
       </div>
+
+      <style>{`
+        @keyframes progressGlow {
+          0% { box-shadow: 0 0 0px rgba(0,0,0,0); }
+          100% { box-shadow: 0 0 10px rgba(13,110,253,0.4); }
+        }
+        .progress-active {
+          animation: progressGlow 1s ease-in-out infinite alternate;
+        }
+      `}</style>
     </div>
   );
 }
