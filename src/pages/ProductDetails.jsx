@@ -5,8 +5,9 @@ import { useCart } from "../context/CartContext";
 import ProductCard from "../components/products/ProductCard";
 import { toast } from "react-toastify";
 import Loader from "./Loader";
+import { motion } from "framer-motion";
 
-// Consistent Rupee formatter
+// ✅ Rupee formatter
 const Rupee = ({ value, size = "1.1rem", bold = false, color = "#28a745" }) => (
   <span
     style={{
@@ -44,7 +45,7 @@ function ProductDetails() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
 
-  // Fetch product + recommended products
+  // ✅ Fetch product and recommendations
   useEffect(() => {
     const fetchProductAndOthers = async () => {
       try {
@@ -73,13 +74,13 @@ function ProductDetails() {
   if (!product)
     return <p className="text-center mt-5 text-muted">Product not found.</p>;
 
-  // Quantity logic
+  // ✅ Quantity logic
   const handleQtyChange = (val) => {
     if (val < 1) return;
     setQty(val);
   };
 
-  // Add to cart with animation
+  // ✅ Add to cart animation
   const handleAddToCart = async (e) => {
     e.preventDefault();
     e.stopPropagation();
@@ -100,7 +101,7 @@ function ProductDetails() {
       return;
     }
 
-    // Clone the image and animate toward cart
+    // Animate image flying to cart
     const clone = productImage.cloneNode(true);
     const imgRect = productImage.getBoundingClientRect();
     const cartRect = cartIcon.getBoundingClientRect();
@@ -130,7 +131,6 @@ function ProductDetails() {
     setTimeout(() => {
       clone.remove();
 
-      // Bounce cart icon like on home page
       cartIcon.classList.add("cart-bounce");
       setTimeout(() => cartIcon.classList.remove("cart-bounce"), 600);
 
@@ -143,11 +143,23 @@ function ProductDetails() {
     }, 850);
   };
 
+  // ✅ Slide-up animation for the product view
   return (
-    <div className="container mt-4 mb-5">
-      {/* Main product section */}
+    <motion.div
+      className="container mt-4 mb-5"
+      initial={{ y: 100, opacity: 0 }}
+      animate={{ y: 0, opacity: 1 }}
+      exit={{ y: 50, opacity: 0 }}
+      transition={{ duration: 0.6, ease: "easeOut" }}
+    >
+      {/* Main Product Section */}
       <div className="row align-items-start mb-5">
-        <div className="col-md-6 mb-3 mb-md-0 text-center">
+        <motion.div
+          className="col-md-6 mb-3 mb-md-0 text-center"
+          initial={{ scale: 0.9, opacity: 0 }}
+          animate={{ scale: 1, opacity: 1 }}
+          transition={{ delay: 0.1, duration: 0.5 }}
+        >
           <img
             id="product-main-image"
             src={product.image}
@@ -159,9 +171,14 @@ function ProductDetails() {
               border: "1px solid #eee",
             }}
           />
-        </div>
+        </motion.div>
 
-        <div className="col-md-6">
+        <motion.div
+          className="col-md-6"
+          initial={{ opacity: 0, x: 80 }}
+          animate={{ opacity: 1, x: 0 }}
+          transition={{ delay: 0.2, duration: 0.6 }}
+        >
           <h2 className="fw-bold mb-2">{product.name}</h2>
           <p className="text-muted mb-3">{product.brand}</p>
 
@@ -195,18 +212,25 @@ function ProductDetails() {
             </button>
           </div>
 
-          <button
+          <motion.button
             className="btn btn-primary fw-semibold px-4 py-2"
             onClick={handleAddToCart}
+            whileTap={{ scale: 0.95 }}
+            whileHover={{ scale: 1.03 }}
+            transition={{ type: "spring", stiffness: 300 }}
           >
             Add to Cart
-          </button>
-        </div>
+          </motion.button>
+        </motion.div>
       </div>
 
-      {/* Recommended products */}
+      {/* Recommended Products */}
       {otherProducts.length > 0 && (
-        <>
+        <motion.div
+          initial={{ opacity: 0, y: 60 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.3, duration: 0.5 }}
+        >
           <h3 className="fw-bold mb-4 text-primary">
             Other Products You May Like
           </h3>
@@ -217,10 +241,10 @@ function ProductDetails() {
               </div>
             ))}
           </div>
-        </>
+        </motion.div>
       )}
 
-      {/* Cart bounce animation style */}
+      {/* Bounce Animation */}
       <style>{`
         .cart-bounce {
           animation: cartBounce 0.5s ease;
@@ -230,7 +254,7 @@ function ProductDetails() {
           50% { transform: scale(1.3); }
         }
       `}</style>
-    </div>
+    </motion.div>
   );
 }
 
