@@ -2,14 +2,17 @@ import React, { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useNavigate } from "react-router-dom";
 import { authAPI } from "../services/api";
+import { Truck, ShieldCheck, Gift, ShoppingBag } from "lucide-react";
+import { toast } from "react-toastify";
+import "../AuthLanding.css";
 
-function AuthLanding() {
+function Login() {
   const [isLogin, setIsLogin] = useState(true);
   const [formData, setFormData] = useState({
     name: "",
     email: "",
     password: "",
-    phone: "", // ✅ new field for phone number
+    phone: "",
   });
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
@@ -28,7 +31,6 @@ function AuthLanding() {
 
     try {
       if (isLogin) {
-        // ✅ Login flow
         const { data } = await authAPI.login({
           email: formData.email,
           password: formData.password,
@@ -37,76 +39,66 @@ function AuthLanding() {
         localStorage.setItem("token", data.token);
         navigate("/");
       } else {
-        // ✅ Register flow
-        const { data } = await authAPI.register({
+        await authAPI.register({
           name: formData.name,
           email: formData.email,
           password: formData.password,
-          phone: formData.phone, // ✅ send phone number to backend
+          phone: formData.phone,
+          role: "user",
         });
-
-        // 🌀 Instead of navigating directly to home, switch to login mode with animation
-        setTimeout(() => {
-          setIsLogin(true);
-          setFormData({
-            name: "",
-            email: formData.email, // ✅ keep email for quick login
-            password: "",
-            phone: "",
-          });
-          setError("");
-        }, 600); // slight delay for smooth transition
-
-        // Optional success message
-        alert("Registration successful! Please login to continue.");
+        toast.success("Registration successful! Please login to continue.");
+        setTimeout(() => setIsLogin(true), 600);
       }
     } catch (err) {
-      setError(err.response?.data?.message || "Something went wrong!");
+      // Log full error for debugging and show a more detailed message if available
+      console.error("Auth error:", err);
+      const message =
+        err?.response?.data?.message || err?.message || "Something went wrong!";
+      setError(message);
+      try {
+        toast.error(typeof message === "string" ? message : JSON.stringify(message));
+      } catch (e) {
+        // ignore toast errors
+      }
     } finally {
       setLoading(false);
     }
   };
 
   return (
-    <div
-      className="d-flex flex-column justify-content-center align-items-center vh-100"
-      style={{
-        background: "linear-gradient(135deg, #1e3c72 0%, #2a5298 100%)",
-        color: "#fff",
-        overflow: "hidden",
-      }}
-    >
-      <motion.div
-        initial={{ opacity: 0, y: 40 }}
+    <div className="auth-landing">
+      {/* ===== Hero Section ===== */}
+      <motion.section
+        className="hero-section text-center text-light"
+        initial={{ opacity: 0, y: -30 }}
         animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.6 }}
-        className="text-center mb-4"
+        transition={{ duration: 0.7 }}
       >
-        <h1 className="fw-bold display-5">TejaCommerce</h1>
-        <p className="text-light fs-5">
-          Your one-stop destination for all things amazing ✨
+        <ShoppingBag size={48} className="mb-3" />
+        <h1 className="display-5 fw-bold mb-2">TejaCommerce</h1>
+        <p className="fs-5 mb-4 text-light opacity-75">
+          Your one-stop destination for quality and convenience.
         </p>
-      </motion.div>
+      </motion.section>
 
+      {/* ===== Auth Card ===== */}
       <AnimatePresence mode="wait">
         <motion.div
           key={isLogin ? "login" : "register"}
-          initial={{ opacity: 0, y: 50, scale: 0.95 }}
+          initial={{ opacity: 0, y: 40, scale: 0.95 }}
           animate={{ opacity: 1, y: 0, scale: 1 }}
-          exit={{ opacity: 0, y: -50, scale: 0.95 }}
+          exit={{ opacity: 0, y: -40, scale: 0.95 }}
           transition={{ duration: 0.5 }}
-          className="card shadow-lg p-4"
-          style={{
-            width: "100%",
-            maxWidth: "420px",
-            borderRadius: "1rem",
-            background: "#fff",
-            color: "#333",
-          }}
+          className="auth-card card shadow-lg border-0 p-4 mx-auto"
         >
-          <h2 className="text-center mb-4">
-            {isLogin ? "Welcome Back" : "Create Account"}
+          <h2 className="text-center fw-bold mb-3">
+            {isLogin ? "Welcome Back" : "Create Your Account"}
           </h2>
+          <p className="text-muted text-center mb-4">
+            {isLogin
+              ? "Login to access your account and start shopping."
+              : "Join us and enjoy exclusive offers and fast delivery."}
+          </p>
 
           {error && <div className="alert alert-danger">{error}</div>}
 
@@ -114,68 +106,68 @@ function AuthLanding() {
             {!isLogin && (
               <>
                 <div className="mb-3">
-                  <label className="form-label">Full Name</label>
+                  <label className="form-label fw-semibold">Full Name</label>
                   <input
                     type="text"
                     className="form-control"
+                    placeholder="Enter your full name"
                     value={formData.name}
                     onChange={(e) =>
                       setFormData({ ...formData, name: e.target.value })
                     }
-                    placeholder="Enter your full name"
-                    required={!isLogin}
+                    required
                   />
                 </div>
 
                 <div className="mb-3">
-                  <label className="form-label">Phone Number</label>
+                  <label className="form-label fw-semibold">Phone Number</label>
                   <input
                     type="tel"
                     className="form-control"
+                    placeholder="Enter your phone number"
+                    pattern="[0-9]{10}"
+                    title="Enter a valid 10-digit phone number"
                     value={formData.phone}
                     onChange={(e) =>
                       setFormData({ ...formData, phone: e.target.value })
                     }
-                    placeholder="Enter your phone number"
-                    pattern="[0-9]{10}"
-                    title="Enter a valid 10-digit phone number"
-                    required={!isLogin}
+                    required
                   />
                 </div>
               </>
             )}
 
             <div className="mb-3">
-              <label className="form-label">Email</label>
+              <label className="form-label fw-semibold">Email</label>
               <input
                 type="email"
                 className="form-control"
+                placeholder="Enter your email"
                 value={formData.email}
                 onChange={(e) =>
                   setFormData({ ...formData, email: e.target.value })
                 }
-                placeholder="Enter your email"
                 required
               />
             </div>
 
             <div className="mb-3">
-              <label className="form-label">Password</label>
+              <label className="form-label fw-semibold">Password</label>
               <input
                 type="password"
                 className="form-control"
+                placeholder="Enter your password"
                 value={formData.password}
                 onChange={(e) =>
                   setFormData({ ...formData, password: e.target.value })
                 }
-                placeholder="Enter your password"
                 required
               />
             </div>
 
             <button
               type="submit"
-              className="btn btn-primary w-100"
+              className="btn btn-primary w-100 py-2 fw-semibold"
               disabled={loading}
             >
               {loading
@@ -188,45 +180,66 @@ function AuthLanding() {
             </button>
           </form>
 
-          <p className="text-center mt-3 mb-0">
+          <div className="text-center mt-3">
             {isLogin ? (
               <>
                 Don’t have an account?{" "}
-                <button
-                  type="button"
-                  onClick={toggleMode}
-                  className="btn btn-link p-0"
-                >
+                <button className="btn btn-link p-0" onClick={toggleMode}>
                   Register
                 </button>
               </>
             ) : (
               <>
                 Already have an account?{" "}
-                <button
-                  type="button"
-                  onClick={toggleMode}
-                  className="btn btn-link p-0"
-                >
+                <button className="btn btn-link p-0" onClick={toggleMode}>
                   Login
                 </button>
               </>
             )}
-          </p>
+          </div>
         </motion.div>
       </AnimatePresence>
 
-      <motion.footer
-        initial={{ opacity: 0 }}
-        animate={{ opacity: 1 }}
-        transition={{ delay: 1 }}
-        className="mt-5 text-light-50"
-        style={{ fontSize: "0.9rem" }}
-      >
+      {/* ===== Info Section ===== */}
+      <section className="info-section text-center mt-5 px-3">
+        <h3 className="fw-bold mb-4">Why Choose TejaCommerce</h3>
+        <div className="row justify-content-center">
+          <div className="col-md-3 col-10 mb-4">
+            <div className="info-card p-4 shadow-sm rounded-4">
+              <Truck size={36} className="text-primary mb-3" />
+              <h5 className="fw-semibold">Fast Delivery</h5>
+              <p className="text-muted small">
+                Get your orders delivered quickly with real-time tracking.
+              </p>
+            </div>
+          </div>
+          <div className="col-md-3 col-10 mb-4">
+            <div className="info-card p-4 shadow-sm rounded-4">
+              <ShieldCheck size={36} className="text-success mb-3" />
+              <h5 className="fw-semibold">Secure Payments</h5>
+              <p className="text-muted small">
+                Multiple payment options with advanced encryption.
+              </p>
+            </div>
+          </div>
+          <div className="col-md-3 col-10 mb-4">
+            <div className="info-card p-4 shadow-sm rounded-4">
+              <Gift size={36} className="text-warning mb-3" />
+              <h5 className="fw-semibold">Exclusive Offers</h5>
+              <p className="text-muted small">
+                Unlock member-only discounts and seasonal deals.
+              </p>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* ===== Footer ===== */}
+      <footer className="text-center mt-5 mb-3 text-light opacity-75">
         © {new Date().getFullYear()} TejaCommerce. All rights reserved.
-      </motion.footer>
+      </footer>
     </div>
   );
 }
 
-export default AuthLanding;
+export default Login;

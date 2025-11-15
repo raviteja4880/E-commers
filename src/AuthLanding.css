@@ -1,0 +1,90 @@
+.auth-landing {
+  min-height: 100vh;
+  background: linear-gradient(
+    135deg,
+    #0f172a 0%,         
+    #1e3a8a 40%,        
+    #2563eb 80%,        
+    #60a5fa 100%        
+  );
+  background-attachment: fixed;
+  color: #fff;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding-top: 60px;
+  padding-bottom: 80px;
+  font-family: "Poppins", sans-serif;
+}
+
+/* HERO SECTION */
+.hero-section {
+  margin-bottom: 40px;
+  text-shadow: 0 3px 8px rgba(0, 0, 0, 0.25);
+}
+
+/* AUTH CARD */
+.auth-card {
+  max-width: 420px;
+  width: 100%;
+  background: rgba(255, 255, 255, 0.95);
+  backdrop-filter: blur(10px);
+  color: #1e293b;
+  border-radius: 1rem;
+  transition: all 0.3s ease-in-out;
+}
+
+.auth-card:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.15);
+}
+
+/* INFO SECTION */
+.info-section {
+  margin-top: 80px;
+  color: #fff;
+}
+
+.info-section h3 {
+  color: #f8fafc;
+}
+
+.info-card {
+  background: rgba(255, 255, 255, 0.12);
+  backdrop-filter: blur(6px);
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  border-radius: 1rem;
+  color: #fff;
+  transition: all 0.3s ease-in-out;
+  height: 100%;
+}
+
+.info-card:hover {
+  transform: translateY(-6px);
+  background: rgba(255, 255, 255, 0.2);
+  border-color: rgba(255, 255, 255, 0.3);
+}
+
+/* ICON COLOR TWEAKS */
+.info-card svg {
+  width: 38px;
+  height: 38px;
+}
+
+/* LINK BUTTONS */
+.btn-link {
+  color: #1d4ed8 !important;
+  text-decoration: none;
+  font-weight: 600;
+}
+
+.btn-link:hover {
+  text-decoration: underline;
+}
+
+/* FOOTER */
+footer {
+  font-size: 0.9rem;
+  color: #cbd5e1;
+  margin-top: 40px;
+}
