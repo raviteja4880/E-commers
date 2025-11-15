@@ -97,6 +97,11 @@ function OrderSuccessPage() {
   }, [orderId]);
 
   const handleConfirmCancel = async () => {
+    if (!order?._id) {
+      alert("Order details not loaded yet. Please wait a moment.");
+      return;
+    }
+
     const finalReason =
       cancelReason === "Other" ? customReason.trim() : cancelReason;
 
@@ -123,10 +128,17 @@ function OrderSuccessPage() {
   };
 
   if (loading) return <Loader />;
-  if (error)
-    return <p className="text-center mt-5 text-danger fw-semibold">{error}</p>;
-  if (!order)
-    return <p className="text-center mt-5 text-muted">Order not found.</p>;
+if (error)
+  return <p className="text-center mt-5 text-danger fw-semibold">{error}</p>;
+if (!order)
+  return <p className="text-center mt-5 text-muted">Order not found.</p>;
+
+const progressColor = order?.isCanceled
+  ? "#dc3545"
+  : order?.isDelivered
+  ? "#28a745"
+  : "#0d6efd";
+
 
   const progressWidth =
     progressStage === 0
@@ -134,12 +146,6 @@ function OrderSuccessPage() {
       : progressStage >= stages.length
       ? "80%"
       : `${((progressStage - 1) / (stages.length - 1)) * 80}%`;
-
-  const progressColor = order.isCanceled
-    ? "#dc3545"
-    : order.isDelivered
-    ? "#28a745"
-    : "#0d6efd";
 
   return (
     <div className="container py-4" style={{ maxWidth: "960px" }}>
@@ -361,8 +367,8 @@ function OrderSuccessPage() {
         <div className="text-center mt-4">
           {!order.isDelivered && !order.isCanceled && (
             <button
-              className="btn btn-outline-danger fw-semibold px-4 py-2 mx-2"
-              style={{ minWidth: "160px" }}
+              className="btn btn-danger"
+              disabled={!order?._id || submittingCancel}
               onClick={() => setShowCancelModal(true)}
             >
               Cancel Order
